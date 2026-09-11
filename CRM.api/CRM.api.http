@@ -1,0 +1,66 @@
+@CRM.api_HostAddress = http://localhost:5004
+
+GET {{CRM.api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+POST {{CRM.api_HostAddress}}/companies
+Content-Type: application/json
+
+{
+  "companyCode": "COMP001",
+  "companyName": "Sample Company"
+}
+
+###
+
+POST {{CRM.api_HostAddress}}/companies
+Content-Type: application/json
+
+{
+  "companyCode": "COMP002",
+  "companyName": "My First Company",
+  "isActive": true,
+  "createdAt": "2026-09-03T09:15:00"
+}
+
+###
+
+POST {{CRM.api_HostAddress}}/devices
+Content-Type: application/json
+
+{
+  "companyId": 1,
+  "deviceCode": "DEV001",
+  "deviceName": "Main PC",
+  "isActive": true,
+  "createdAt": "2026-09-03T09:50:00"
+}
+
+###
+
+POST {{CRM.api_HostAddress}}/company-databases
+Content-Type: application/json
+
+{
+  "companyId": 1,
+  "serverName": "db67567.public.databaseasp.net",
+  "databaseName": "db67567",
+  "isActive": true
+}
+
+###
+
+POST {{CRM.api_HostAddress}}/tenant/1/products
+Content-Type: application/json
+
+{
+  "productCode": "PROD001",
+  "productName": "Demo Product",
+  "unitPrice": 99.50,
+  "isActive": true
+}
+
+  ###
+
+GET {{CRM.api_HostAddress}}/tenant/1/products
+Accept: application/json
