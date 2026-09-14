@@ -64,3 +64,96 @@ Content-Type: application/json
 
 GET {{CRM.api_HostAddress}}/tenant/1/products
 Accept: application/json
+
+
+###
+
+POST {{CRM.api_HostAddress}}/tenant/1/customers
+Content-Type: application/json
+
+{
+  "customerCode": "CUST001",
+  "customerName": "Juan Dela Cruz",
+  "contactNumber": "09171234567",
+  "emailAddress": "juan@example.com",
+  "address": "Davao City",
+  "isActive": true
+}
+
+###
+
+GET {{CRM.api_HostAddress}}/tenant/1/customers
+Accept: application/json
+
+###
+
+PUT {{CRM.api_HostAddress}}/tenant/1/customers/1
+Content-Type: application/json
+
+{
+  "customerCode": "CUST001",
+  "customerName": "Juan Dela Cruz Jr.",
+  "contactNumber": "09171234567",
+  "emailAddress": "juan@example.com",
+  "address": "Davao City",
+  "isActive": true
+}
+
+###
+
+DELETE {{CRM.api_HostAddress}}/tenant/1/customers/1
+
+###
+
+GET {{CRM.api_HostAddress}}/tenant/1/customers
+Accept: application/json
+
+###
+
+DELETE {{CRM.api_HostAddress}}/tenant/1/customers/1
+
+###
+
+POST {{CRM.api_HostAddress}}/tenant/1/membershipplans
+Content-Type: application/json
+
+{
+  "planCode": "MON",
+  "planName": "Monthly",
+  "description": "Standard monthly gym access",
+  "price": 1200.00,
+  "durationInDays": 30,
+  "isActive": true
+}
+
+###
+
+GET {{CRM.api_HostAddress}}/tenant/1/membershipplans
+Accept: application/json
+
+###
+
+PUT {{CRM.api_HostAddress}}/tenant/1/membershipplans/1
+Content-Type: application/json
+
+{
+  "planCode": "MON",
+  "planName": "Monthly Plus",
+  "description": "Standard monthly gym access",
+  "price": 1350.00,
+  "durationInDays": 30,
+  "isActive": true
+}
+
+###
+
+DELETE {{CRM.api_HostAddress}}/tenant/1/membershipplans/1
+
+###
+
+GET {{CRM.api_HostAddress}}/tenant/1/membershipplans
+Accept: application/json
+
+###
+
+DELETE {{CRM.api_HostAddress}}/tenant/1/membershipplans/1

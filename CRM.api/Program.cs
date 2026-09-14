@@ -95,4 +95,120 @@ app.MapGet("/tenant/{companyId:int}/products", async (
     return Results.Ok(products);
 });
 
+app.MapPost("/tenant/{companyId:int}/customers", async (
+    int companyId,
+    Customer customer,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    tenantDb.Customers.Add(customer);
+    await tenantDb.SaveChangesAsync();
+    return Results.Created($"/tenant/{companyId}/customers/{customer.CustomerId}", customer);
+});
+
+app.MapGet("/tenant/{companyId:int}/customers", async (
+    int companyId,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    var customers = await tenantDb.Customers
+        .AsNoTracking()
+        .OrderBy(x => x.CustomerId)
+        .ToListAsync();
+    return Results.Ok(customers);
+});
+
+app.MapPut("/tenant/{companyId:int}/customers/{customerId:int}", async (
+    int companyId,
+    int customerId,
+    Customer updated,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    var existing = await tenantDb.Customers.FindAsync(customerId);
+    if (existing is null) return Results.NotFound();
+
+    existing.CustomerCode = updated.CustomerCode;
+    existing.CustomerName = updated.CustomerName;
+    existing.ContactNumber = updated.ContactNumber;
+    existing.EmailAddress = updated.EmailAddress;
+    existing.Address = updated.Address;
+    existing.IsActive = updated.IsActive;
+
+    await tenantDb.SaveChangesAsync();
+    return Results.Ok(existing);
+});
+
+app.MapDelete("/tenant/{companyId:int}/customers/{customerId:int}", async (
+    int companyId,
+    int customerId,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    var existing = await tenantDb.Customers.FindAsync(customerId);
+    if (existing is null) return Results.NotFound();
+
+    tenantDb.Customers.Remove(existing);
+    await tenantDb.SaveChangesAsync();
+    return Results.NoContent();
+});
+
+app.MapPost("/tenant/{companyId:int}/membershipplans", async (
+    int companyId,
+    MembershipPlan plan,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    tenantDb.MembershipPlans.Add(plan);
+    await tenantDb.SaveChangesAsync();
+    return Results.Created($"/tenant/{companyId}/membershipplans/{plan.MembershipPlanId}", plan);
+});
+
+app.MapGet("/tenant/{companyId:int}/membershipplans", async (
+    int companyId,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    var plans = await tenantDb.MembershipPlans
+        .AsNoTracking()
+        .OrderBy(x => x.MembershipPlanId)
+        .ToListAsync();
+    return Results.Ok(plans);
+});
+
+app.MapPut("/tenant/{companyId:int}/membershipplans/{planId:int}", async (
+    int companyId,
+    int planId,
+    MembershipPlan updated,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    var existing = await tenantDb.MembershipPlans.FindAsync(planId);
+    if (existing is null) return Results.NotFound();
+
+    existing.PlanCode = updated.PlanCode;
+    existing.PlanName = updated.PlanName;
+    existing.Description = updated.Description;
+    existing.Price = updated.Price;
+    existing.DurationInDays = updated.DurationInDays;
+    existing.IsActive = updated.IsActive;
+
+    await tenantDb.SaveChangesAsync();
+    return Results.Ok(existing);
+});
+
+app.MapDelete("/tenant/{companyId:int}/membershipplans/{planId:int}", async (
+    int companyId,
+    int planId,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    var existing = await tenantDb.MembershipPlans.FindAsync(planId);
+    if (existing is null) return Results.NotFound();
+
+    tenantDb.MembershipPlans.Remove(existing);
+    await tenantDb.SaveChangesAsync();
+    return Results.NoContent();
+});
+
 app.Run();
