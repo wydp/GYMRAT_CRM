@@ -1,3 +1,4 @@
+using CRM.winforms;
 namespace GYMRAT_CRM
 {
     internal static class Program

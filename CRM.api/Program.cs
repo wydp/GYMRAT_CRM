@@ -1,5 +1,6 @@
 using CRM.domain.Entities;
 using CRM.infrastructure.Data;
+using Microsoft.Data.SqlClient;
 using CRM.infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -102,7 +103,16 @@ app.MapPost("/tenant/{companyId:int}/customers", async (
 {
     await using var tenantDb = await tenantFactory.CreateAsync(companyId);
     tenantDb.Customers.Add(customer);
-    await tenantDb.SaveChangesAsync();
+
+    try
+    {
+        await tenantDb.SaveChangesAsync();
+    }
+    catch (DbUpdateException ex) when (ex.InnerException is SqlException sql && (sql.Number == 2601 || sql.Number == 2627))
+    {
+        return Results.Conflict(new { message = "A customer with this code already exists." });
+    }
+
     return Results.Created($"/tenant/{companyId}/customers/{customer.CustomerId}", customer);
 });
 
@@ -135,7 +145,15 @@ app.MapPut("/tenant/{companyId:int}/customers/{customerId:int}", async (
     existing.Address = updated.Address;
     existing.IsActive = updated.IsActive;
 
-    await tenantDb.SaveChangesAsync();
+    try
+    {
+        await tenantDb.SaveChangesAsync();
+    }
+    catch (DbUpdateException ex) when (ex.InnerException is SqlException sql && (sql.Number == 2601 || sql.Number == 2627))
+    {
+        return Results.Conflict(new { message = "A customer with this code already exists." });
+    }
+
     return Results.Ok(existing);
 });
 
@@ -160,7 +178,16 @@ app.MapPost("/tenant/{companyId:int}/membershipplans", async (
 {
     await using var tenantDb = await tenantFactory.CreateAsync(companyId);
     tenantDb.MembershipPlans.Add(plan);
-    await tenantDb.SaveChangesAsync();
+
+    try
+    {
+        await tenantDb.SaveChangesAsync();
+    }
+    catch (DbUpdateException ex) when (ex.InnerException is SqlException sql && (sql.Number == 2601 || sql.Number == 2627))
+    {
+        return Results.Conflict(new { message = "A membership plan with this code already exists." });
+    }
+
     return Results.Created($"/tenant/{companyId}/membershipplans/{plan.MembershipPlanId}", plan);
 });
 
@@ -193,7 +220,15 @@ app.MapPut("/tenant/{companyId:int}/membershipplans/{planId:int}", async (
     existing.DurationInDays = updated.DurationInDays;
     existing.IsActive = updated.IsActive;
 
-    await tenantDb.SaveChangesAsync();
+    try
+    {
+        await tenantDb.SaveChangesAsync();
+    }
+    catch (DbUpdateException ex) when (ex.InnerException is SqlException sql && (sql.Number == 2601 || sql.Number == 2627))
+    {
+        return Results.Conflict(new { message = "A membership plan with this code already exists." });
+    }
+
     return Results.Ok(existing);
 });
 
