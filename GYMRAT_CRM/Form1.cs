@@ -1,428 +1,171 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-using CRM.domain.Entities;
+using CRM.winforms.Controls;
 using CRM.winforms.Model;
 
 namespace CRM.winforms
 {
     public partial class Form1 : Form
     {
-        private readonly ApiClient _api = new ApiClient();
-        private readonly Tints _tints = new Tints();
-        private readonly Shades _shades = new Shades();
+        // TEMP: hardcoded until a login screen exists.
+        // Later, replace these two lines with real values from login.
+        private string currentRole = "Admin";
+        private string currentUserName = "Moni Roy";
 
-        // Customers tab
-        private DataGridView dgvCustomers;
-        private TextBox txtCustomerCode, txtCustomerName, txtContactNumber, txtEmailAddress, txtAddress;
-        private CheckBox chkCustomerActive;
-        private int? selectedCustomerId = null;
+        // Palette instances — same classes you already have in Model/
+        private readonly Shades shades = new Shades();
+        private readonly Tints tints = new Tints();
+        private readonly Tones tones = new Tones();
+        private readonly AccentColors accents = new AccentColors();
 
-        // Membership Plans tab
-        private DataGridView dgvPlans;
-        private TextBox txtPlanCode, txtPlanName, txtDescription;
-        private NumericUpDown numPrice, numDuration;
-        private CheckBox chkPlanActive;
-        private int? selectedPlanId = null;
+        private readonly ContextMenuStrip profileMenu = new ContextMenuStrip();
+        private Button? activeNavButton;
+
+        // Which sidebar items each role can see.
+        // Source: GymRat use case doc, "User Access" section.
+        // NOTE: "Customers" and "Membership Plans" aren't named modules in the use
+        // case doc — they'd formally live under "Sales Force Automation" — but
+        // they're the only fully working entities right now, so they're listed
+        // as their own temporary items until Sales Force Automation is built out.
+        private static readonly Dictionary<string, string[]> RoleModules = new Dictionary<string, string[]>
+        {
+            ["Super Admin"] = new[] { "Software Subscription", "Terms & Conditions", "Subscription Analytics" },
+            ["Admin"] = new[] { "Dashboard", "Customers", "Membership Plans", "Branch Management", "Customer Support", "Marketing Automation", "Sales Force Automation", "Terms & Conditions" },
+            ["Manager"] = new[] { "Dashboard", "Customers", "Membership Plans", "Customer Support", "Marketing Automation", "Sales Force Automation", "Terms & Conditions" },
+            ["Staff"] = new[] { "Customers", "Customer Support", "Sales Force Automation", "Terms & Conditions" },
+        };
 
         public Form1()
         {
             InitializeComponent();
-            BuildUi();
+            ApplyPalette();
+            SetupProfileMenu();
+            BuildSidebar();
         }
 
-        private void BuildUi()
+        // Applies palette colors to the parts of the shell that don't
+        // change per-module (logo, content background). Sidebar button
+        // colors are set separately in BuildSidebar/SetActiveButton.
+        private void ApplyPalette()
         {
-            this.Text = "GymRat CRM";
-            this.Width = 950;
-            this.Height = 650;
+            logoLabel.ForeColor = Color.FromArgb(72, 128, 255); // Primary
+            contentPanel.BackColor = Color.FromArgb(245, 246, 250); // Background gray
+        }
 
-            var tabs = new TabControl { Dock = DockStyle.Fill };
-            var tabCustomers = new TabPage("Customers");
-            var tabPlans = new TabPage("Membership Plans");
-            tabs.TabPages.Add(tabCustomers);
-            tabs.TabPages.Add(tabPlans);
-            this.Controls.Add(tabs);
+        // Builds the right-click-style dropdown for the profile label.
+        // ContextMenuStrip is the standard WinForms control for this —
+        // not a hack, just won't look as rounded/styled as the reference image.
+        private void SetupProfileMenu()
+        {
+            profileMenu.Items.Add("Profile", null, (s, e) =>
+                MessageBox.Show("Profile screen not built yet."));
+            profileMenu.Items.Add("Settings", null, (s, e) =>
+                MessageBox.Show("Settings screen not built yet."));
+            profileMenu.Items.Add(new ToolStripSeparator());
+            profileMenu.Items.Add("Sign Out", null, (s, e) =>
+                MessageBox.Show("Sign out will be wired up once login is built."));
 
-            BuildCustomersTab(tabCustomers);
-            BuildPlansTab(tabPlans);
+            profileLabel.Text = $"{currentUserName} \u25BE";
+            profileLabel.Click += (s, e) =>
+                profileMenu.Show(profileLabel, new Point(0, profileLabel.Height));
+        }
 
-            this.Load += async (s, e) =>
+        // Reads RoleModules for currentRole and generates one Button per
+        // module name. Rebuilding from scratch (Controls.Clear) instead of
+        // show/hide keeps this simple for now — fine at this scale (≤8 items).
+        private void BuildSidebar()
+        {
+            sidebarPanel.Controls.Clear();
+
+            var modules = RoleModules.ContainsKey(currentRole)
+                ? RoleModules[currentRole]
+                : Array.Empty<string>();
+
+            int y = 20;
+            foreach (var moduleName in modules)
             {
-                await LoadCustomersAsync();
-                await LoadPlansAsync();
-            };
-        }
+                var btn = new Button
+                {
+                    Text = moduleName,
+                    Tag = moduleName, // stores the module name so the click handler knows which one was pressed
+                    FlatStyle = FlatStyle.Flat,
+                    TextAlign = ContentAlignment.MiddleLeft,
+                    Padding = new Padding(16, 0, 0, 0),
+                    Location = new Point(0, y),
+                    Size = new Size(sidebarPanel.Width, 44),
+                    Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
+                    BackColor = Color.White,
+                    ForeColor = Color.FromArgb(31, 41, 55), // Text Primary
+                    Font = new Font("Segoe UI", 10F),
+                    Cursor = Cursors.Hand,
+                };
+                btn.FlatAppearance.BorderSize = 0;
+                btn.Click += NavButton_Click;
 
-        // ===================== CUSTOMERS TAB =====================
-
-        private void BuildCustomersTab(TabPage tab)
-        {
-            dgvCustomers = new DataGridView
-            {
-                Location = new Point(10, 10),
-                Size = new Size(900, 250),
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
-                ReadOnly = true,
-                AutoGenerateColumns = true,
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                MultiSelect = false
-            };
-            dgvCustomers.SelectionChanged += DgvCustomers_SelectionChanged;
-            tab.Controls.Add(dgvCustomers);
-
-            var grp = new GroupBox { Text = "Customer Details", Location = new Point(10, 270), Size = new Size(900, 220) };
-            txtCustomerCode = AddLabeledTextBox(grp, "Customer Code:", 25);
-            txtCustomerName = AddLabeledTextBox(grp, "Customer Name:", 55);
-            txtContactNumber = AddLabeledTextBox(grp, "Contact Number:", 85);
-            txtEmailAddress = AddLabeledTextBox(grp, "Email Address:", 115);
-            txtAddress = AddLabeledTextBox(grp, "Address:", 145);
-            chkCustomerActive = new CheckBox { Text = "Active", Location = new Point(140, 175), Checked = true };
-            grp.Controls.Add(chkCustomerActive);
-            tab.Controls.Add(grp);
-
-            var btnAdd = new Button { Text = "Add", Location = new Point(10, 500), Size = new Size(90, 30), BackColor = _tints.VividRed, ForeColor = Color.White };
-            var btnUpdate = new Button { Text = "Update", Location = new Point(110, 500), Size = new Size(90, 30), BackColor = _shades.DarkRed, ForeColor = Color.White };
-            var btnDelete = new Button { Text = "Delete", Location = new Point(210, 500), Size = new Size(90, 30), BackColor = _shades.Maroon, ForeColor = Color.White };
-            var btnRefresh = new Button { Text = "Refresh", Location = new Point(310, 500), Size = new Size(90, 30) };
-            var btnClear = new Button { Text = "Clear", Location = new Point(410, 500), Size = new Size(90, 30) };
-
-            btnAdd.Click += async (s, e) => await AddCustomerAsync();
-            btnUpdate.Click += async (s, e) => await UpdateCustomerAsync();
-            btnDelete.Click += async (s, e) => await DeleteCustomerAsync();
-            btnRefresh.Click += async (s, e) => await LoadCustomersAsync();
-            btnClear.Click += (s, e) => ClearCustomerFields();
-
-            tab.Controls.Add(btnAdd);
-            tab.Controls.Add(btnUpdate);
-            tab.Controls.Add(btnDelete);
-            tab.Controls.Add(btnRefresh);
-            tab.Controls.Add(btnClear);
-        }
-
-        private void DgvCustomers_SelectionChanged(object sender, EventArgs e)
-        {
-            if (dgvCustomers.CurrentRow?.DataBoundItem is not Customer c) return;
-
-            selectedCustomerId = c.CustomerId;
-            txtCustomerCode.Text = c.CustomerCode;
-            txtCustomerName.Text = c.CustomerName;
-            txtContactNumber.Text = c.ContactNumber;
-            txtEmailAddress.Text = c.EmailAddress;
-            txtAddress.Text = c.Address;
-            chkCustomerActive.Checked = c.IsActive;
-        }
-
-        private async System.Threading.Tasks.Task LoadCustomersAsync()
-        {
-            try
-            {
-                var customers = await _api.GetCustomersAsync();
-                dgvCustomers.DataSource = customers;
+                sidebarPanel.Controls.Add(btn);
+                y += 44;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Failed to load customers: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+
+            if (sidebarPanel.Controls.Count > 0)
+                SetActiveButton((Button)sidebarPanel.Controls[0]);
         }
 
-        private bool ValidateCustomerFields()
+        private void NavButton_Click(object? sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtCustomerCode.Text) || string.IsNullOrWhiteSpace(txtCustomerName.Text))
-            {
-                MessageBox.Show("Customer Code and Customer Name are required.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return false;
-            }
-            return true;
+            if (sender is not Button clicked) return; // guards the null/cast in one step
+            SetActiveButton(clicked);
+            LoadModule(clicked.Tag?.ToString() ?? string.Empty);
         }
 
-        private async System.Threading.Tasks.Task AddCustomerAsync()
+        // Resets the previously active button back to white/normal,
+        // then paints the newly clicked one with the Primary blue —
+        // this is what gives the "Dashboard" item its highlighted look
+        // in the reference screenshot.
+        private void SetActiveButton(Button button)
         {
-            if (!ValidateCustomerFields()) return;
-
-            var customer = new Customer
+            if (activeNavButton != null)
             {
-                CustomerCode = txtCustomerCode.Text.Trim(),
-                CustomerName = txtCustomerName.Text.Trim(),
-                ContactNumber = txtContactNumber.Text.Trim(),
-                EmailAddress = txtEmailAddress.Text.Trim(),
-                Address = txtAddress.Text.Trim(),
-                IsActive = chkCustomerActive.Checked
+                activeNavButton.BackColor = Color.White;
+                activeNavButton.ForeColor = Color.FromArgb(31, 41, 55);
+            }
+
+            button.BackColor = Color.FromArgb(72, 128, 255); // Primary
+            button.ForeColor = Color.White;
+            activeNavButton = button;
+        }
+
+        // Swaps the visible content. Real modules get their own UserControl
+        // added as a case below; anything not built yet falls through to
+        // the placeholder label.
+        private void LoadModule(string moduleName)
+        {
+            contentPanel.Controls.Clear();
+
+            UserControl moduleControl = moduleName switch
+            {
+                "Customers" => new CustomerControl { Dock = DockStyle.Fill },
+                "Membership Plans" => new MembershipPlanControl { Dock = DockStyle.Fill },
+                "Customer Support" => new CustomerSupportControl { Dock = DockStyle.Fill },
+                _ => null,
             };
 
-            try
+            if (moduleControl != null)
             {
-                await _api.CreateCustomerAsync(customer);
-                await LoadCustomersAsync();
-                ClearCustomerFields();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Failed to add customer: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private async System.Threading.Tasks.Task UpdateCustomerAsync()
-        {
-            if (selectedCustomerId is null)
-            {
-                MessageBox.Show("Select a customer from the grid first.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-            if (!ValidateCustomerFields()) return;
-
-            var customer = new Customer
-            {
-                CustomerCode = txtCustomerCode.Text.Trim(),
-                CustomerName = txtCustomerName.Text.Trim(),
-                ContactNumber = txtContactNumber.Text.Trim(),
-                EmailAddress = txtEmailAddress.Text.Trim(),
-                Address = txtAddress.Text.Trim(),
-                IsActive = chkCustomerActive.Checked
-            };
-
-            try
-            {
-                await _api.UpdateCustomerAsync(selectedCustomerId.Value, customer);
-                await LoadCustomersAsync();
-                ClearCustomerFields();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Failed to update customer: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private async System.Threading.Tasks.Task DeleteCustomerAsync()
-        {
-            if (selectedCustomerId is null)
-            {
-                MessageBox.Show("Select a customer from the grid first.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                contentPanel.Controls.Add(moduleControl);
                 return;
             }
 
-            var confirm = MessageBox.Show("Delete this customer?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-            if (confirm != DialogResult.Yes) return;
-
-            try
+            var placeholder = new Label
             {
-                await _api.DeleteCustomerAsync(selectedCustomerId.Value);
-                await LoadCustomersAsync();
-                ClearCustomerFields();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Failed to delete customer: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void ClearCustomerFields()
-        {
-            selectedCustomerId = null;
-            txtCustomerCode.Clear();
-            txtCustomerName.Clear();
-            txtContactNumber.Clear();
-            txtEmailAddress.Clear();
-            txtAddress.Clear();
-            chkCustomerActive.Checked = true;
-        }
-
-        // ===================== MEMBERSHIP PLANS TAB =====================
-
-        private void BuildPlansTab(TabPage tab)
-        {
-            dgvPlans = new DataGridView
-            {
-                Location = new Point(10, 10),
-                Size = new Size(900, 250),
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
-                ReadOnly = true,
-                AutoGenerateColumns = true,
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                MultiSelect = false
+                Text = $"{moduleName} module \u2014 not built yet.",
+                Font = new Font("Segoe UI", 14F),
+                ForeColor = Color.FromArgb(107, 114, 128), // Text Secondary
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleCenter,
             };
-            dgvPlans.SelectionChanged += DgvPlans_SelectionChanged;
-            tab.Controls.Add(dgvPlans);
-
-            var grp = new GroupBox { Text = "Membership Plan Details", Location = new Point(10, 270), Size = new Size(900, 220) };
-            txtPlanCode = AddLabeledTextBox(grp, "Plan Code:", 25);
-            txtPlanName = AddLabeledTextBox(grp, "Plan Name:", 55);
-            txtDescription = AddLabeledTextBox(grp, "Description:", 85);
-
-            var lblPrice = new Label { Text = "Price:", Location = new Point(10, 115), Width = 120 };
-            numPrice = new NumericUpDown { Location = new Point(140, 115), Width = 200, DecimalPlaces = 2, Maximum = 999999, Minimum = 0 };
-            grp.Controls.Add(lblPrice);
-            grp.Controls.Add(numPrice);
-
-            var lblDuration = new Label { Text = "Duration (days):", Location = new Point(10, 145), Width = 120 };
-            numDuration = new NumericUpDown { Location = new Point(140, 145), Width = 200, Maximum = 3650, Minimum = 1, Value = 30 };
-            grp.Controls.Add(lblDuration);
-            grp.Controls.Add(numDuration);
-
-            chkPlanActive = new CheckBox { Text = "Active", Location = new Point(140, 175), Checked = true };
-            grp.Controls.Add(chkPlanActive);
-            tab.Controls.Add(grp);
-
-            var btnAdd = new Button { Text = "Add", Location = new Point(10, 500), Size = new Size(90, 30), BackColor = _tints.VividRed, ForeColor = Color.White };
-            var btnUpdate = new Button { Text = "Update", Location = new Point(110, 500), Size = new Size(90, 30), BackColor = _shades.DarkRed, ForeColor = Color.White };
-            var btnDelete = new Button { Text = "Delete", Location = new Point(210, 500), Size = new Size(90, 30), BackColor = _shades.Maroon, ForeColor = Color.White };
-            var btnRefresh = new Button { Text = "Refresh", Location = new Point(310, 500), Size = new Size(90, 30) };
-            var btnClear = new Button { Text = "Clear", Location = new Point(410, 500), Size = new Size(90, 30) };
-
-            btnAdd.Click += async (s, e) => await AddPlanAsync();
-            btnUpdate.Click += async (s, e) => await UpdatePlanAsync();
-            btnDelete.Click += async (s, e) => await DeletePlanAsync();
-            btnRefresh.Click += async (s, e) => await LoadPlansAsync();
-            btnClear.Click += (s, e) => ClearPlanFields();
-
-            tab.Controls.Add(btnAdd);
-            tab.Controls.Add(btnUpdate);
-            tab.Controls.Add(btnDelete);
-            tab.Controls.Add(btnRefresh);
-            tab.Controls.Add(btnClear);
-        }
-
-        private void DgvPlans_SelectionChanged(object sender, EventArgs e)
-        {
-            if (dgvPlans.CurrentRow?.DataBoundItem is not MembershipPlan p) return;
-
-            selectedPlanId = p.MembershipPlanId;
-            txtPlanCode.Text = p.PlanCode;
-            txtPlanName.Text = p.PlanName;
-            txtDescription.Text = p.Description;
-            numPrice.Value = p.Price;
-            numDuration.Value = p.DurationInDays;
-            chkPlanActive.Checked = p.IsActive;
-        }
-
-        private async System.Threading.Tasks.Task LoadPlansAsync()
-        {
-            try
-            {
-                var plans = await _api.GetMembershipPlansAsync();
-                dgvPlans.DataSource = plans;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Failed to load plans: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private bool ValidatePlanFields()
-        {
-            if (string.IsNullOrWhiteSpace(txtPlanCode.Text) || string.IsNullOrWhiteSpace(txtPlanName.Text))
-            {
-                MessageBox.Show("Plan Code and Plan Name are required.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return false;
-            }
-            if (numPrice.Value <= 0)
-            {
-                MessageBox.Show("Price must be greater than 0.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return false;
-            }
-            return true;
-        }
-
-        private async System.Threading.Tasks.Task AddPlanAsync()
-        {
-            if (!ValidatePlanFields()) return;
-
-            var plan = new MembershipPlan
-            {
-                PlanCode = txtPlanCode.Text.Trim(),
-                PlanName = txtPlanName.Text.Trim(),
-                Description = txtDescription.Text.Trim(),
-                Price = numPrice.Value,
-                DurationInDays = (int)numDuration.Value,
-                IsActive = chkPlanActive.Checked
-            };
-
-            try
-            {
-                await _api.CreateMembershipPlanAsync(plan);
-                await LoadPlansAsync();
-                ClearPlanFields();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Failed to add plan: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private async System.Threading.Tasks.Task UpdatePlanAsync()
-        {
-            if (selectedPlanId is null)
-            {
-                MessageBox.Show("Select a plan from the grid first.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-            if (!ValidatePlanFields()) return;
-
-            var plan = new MembershipPlan
-            {
-                PlanCode = txtPlanCode.Text.Trim(),
-                PlanName = txtPlanName.Text.Trim(),
-                Description = txtDescription.Text.Trim(),
-                Price = numPrice.Value,
-                DurationInDays = (int)numDuration.Value,
-                IsActive = chkPlanActive.Checked
-            };
-
-            try
-            {
-                await _api.UpdateMembershipPlanAsync(selectedPlanId.Value, plan);
-                await LoadPlansAsync();
-                ClearPlanFields();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Failed to update plan: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private async System.Threading.Tasks.Task DeletePlanAsync()
-        {
-            if (selectedPlanId is null)
-            {
-                MessageBox.Show("Select a plan from the grid first.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            var confirm = MessageBox.Show("Delete this membership plan?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-            if (confirm != DialogResult.Yes) return;
-
-            try
-            {
-                await _api.DeleteMembershipPlanAsync(selectedPlanId.Value);
-                await LoadPlansAsync();
-                ClearPlanFields();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Failed to delete plan: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void ClearPlanFields()
-        {
-            selectedPlanId = null;
-            txtPlanCode.Clear();
-            txtPlanName.Clear();
-            txtDescription.Clear();
-            numPrice.Value = 0;
-            numDuration.Value = 30;
-            chkPlanActive.Checked = true;
-        }
-
-        // ===================== SHARED HELPER =====================
-
-        private TextBox AddLabeledTextBox(Control parent, string labelText, int y)
-        {
-            var lbl = new Label { Text = labelText, Location = new Point(10, y), Width = 120 };
-            var txt = new TextBox { Location = new Point(140, y), Width = 400 };
-            parent.Controls.Add(lbl);
-            parent.Controls.Add(txt);
-            return txt;
+            contentPanel.Controls.Add(placeholder);
         }
     }
 }

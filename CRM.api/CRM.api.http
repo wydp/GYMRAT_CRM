@@ -157,3 +157,95 @@ Accept: application/json
 ###
 
 DELETE {{CRM.api_HostAddress}}/tenant/1/membershipplans/1
+
+
+###
+
+POST {{CRM.api_HostAddress}}/tenant/1/inquiries
+Content-Type: application/json
+
+{
+  "customerId": 1,
+  "subject": "Pool availability",
+  "message": "Does the Davao branch have a swimming pool?",
+  "isActive": true
+}
+
+###
+
+GET {{CRM.api_HostAddress}}/tenant/1/inquiries
+Accept: application/json
+
+###
+
+PUT {{CRM.api_HostAddress}}/tenant/1/inquiries/1/status
+Content-Type: application/json
+
+{
+  "status": "InProgress"
+}
+
+###
+
+DELETE {{CRM.api_HostAddress}}/tenant/1/inquiries/1
+
+###
+
+GET {{CRM.api_HostAddress}}/tenant/1/inquiries
+Accept: application/json
+
+###
+
+POST {{CRM.api_HostAddress}}/tenant/1/inquiries
+Content-Type: application/json
+
+{
+  "customerId": 99999,
+  "subject": "This should fail",
+  "message": "Testing the nonexistent-customer guard",
+  "isActive": true
+}
+
+###
+
+POST {{CRM.api_HostAddress}}/tenant/1/feedbacks
+Content-Type: application/json
+
+{
+  "customerId": 1,
+  "subject": "Great equipment",
+  "message": "The new treadmills are excellent.",
+  "rating": 5,
+  "isActive": true
+}
+
+###
+
+GET {{CRM.api_HostAddress}}/tenant/1/feedbacks
+Accept: application/json
+
+###
+
+PUT {{CRM.api_HostAddress}}/tenant/1/feedbacks/1/status
+Content-Type: application/json
+
+{
+  "status": "Resolved"
+}
+
+###
+
+DELETE {{CRM.api_HostAddress}}/tenant/1/feedbacks/1
+
+###
+
+POST {{CRM.api_HostAddress}}/tenant/1/feedbacks
+Content-Type: application/json
+
+{
+  "customerId": 9,
+  "subject": "Bad rating test",
+  "message": "Testing the rating validation guard",
+  "rating": 8,
+  "isActive": true
+}

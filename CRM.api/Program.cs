@@ -6,6 +6,11 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+});
+
 builder.Services.AddDbContext<MasterErpDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("MasterErp")));
 
@@ -166,9 +171,9 @@ app.MapDelete("/tenant/{companyId:int}/customers/{customerId:int}", async (
     var existing = await tenantDb.Customers.FindAsync(customerId);
     if (existing is null) return Results.NotFound();
 
-    tenantDb.Customers.Remove(existing);
+    existing.IsActive = false;
     await tenantDb.SaveChangesAsync();
-    return Results.NoContent();
+    return Results.Ok(existing);
 });
 
 app.MapPost("/tenant/{companyId:int}/membershipplans", async (
@@ -241,9 +246,125 @@ app.MapDelete("/tenant/{companyId:int}/membershipplans/{planId:int}", async (
     var existing = await tenantDb.MembershipPlans.FindAsync(planId);
     if (existing is null) return Results.NotFound();
 
-    tenantDb.MembershipPlans.Remove(existing);
+    existing.IsActive = false;
     await tenantDb.SaveChangesAsync();
-    return Results.NoContent();
+    return Results.Ok(existing);
+});
+
+app.MapPost("/tenant/{companyId:int}/inquiries", async (
+    int companyId,
+    Inquiry inquiry,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+
+    var customerExists = await tenantDb.Customers.AnyAsync(c => c.CustomerId == inquiry.CustomerId);
+    if (!customerExists)
+        return Results.BadRequest(new { message = "The specified customer does not exist." });
+
+    tenantDb.Inquiries.Add(inquiry);
+    await tenantDb.SaveChangesAsync();
+    return Results.Created($"/tenant/{companyId}/inquiries/{inquiry.InquiryId}", inquiry);
+});
+
+app.MapGet("/tenant/{companyId:int}/inquiries", async (
+    int companyId,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    var inquiries = await tenantDb.Inquiries
+        .Include(x => x.Customer)
+        .AsNoTracking()
+        .OrderBy(x => x.InquiryId)
+        .ToListAsync();
+    return Results.Ok(inquiries);
+});
+
+app.MapPut("/tenant/{companyId:int}/inquiries/{inquiryId:int}/status", async (
+    int companyId,
+    int inquiryId,
+    UpdateStatusRequest request,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    var existing = await tenantDb.Inquiries.FindAsync(inquiryId);
+    if (existing is null) return Results.NotFound();
+
+    existing.Status = request.Status;
+    await tenantDb.SaveChangesAsync();
+    return Results.Ok(existing);
+});
+
+app.MapDelete("/tenant/{companyId:int}/inquiries/{inquiryId:int}", async (
+    int companyId,
+    int inquiryId,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    var existing = await tenantDb.Inquiries.FindAsync(inquiryId);
+    if (existing is null) return Results.NotFound();
+
+    existing.IsActive = false;
+    await tenantDb.SaveChangesAsync();
+    return Results.Ok(existing);
+});
+
+app.MapPost("/tenant/{companyId:int}/feedbacks", async (
+    int companyId,
+    Feedback feedback,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+
+    var customerExists = await tenantDb.Customers.AnyAsync(c => c.CustomerId == feedback.CustomerId);
+    if (!customerExists)
+        return Results.BadRequest(new { message = "The specified customer does not exist." });
+
+    tenantDb.Feedbacks.Add(feedback);
+    await tenantDb.SaveChangesAsync();
+    return Results.Created($"/tenant/{companyId}/feedbacks/{feedback.FeedbackId}", feedback);
+});
+
+app.MapGet("/tenant/{companyId:int}/feedbacks", async (
+    int companyId,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    var feedbacks = await tenantDb.Feedbacks
+        .Include(x => x.Customer)
+        .AsNoTracking()
+        .OrderBy(x => x.FeedbackId)
+        .ToListAsync();
+    return Results.Ok(feedbacks);
+});
+
+app.MapPut("/tenant/{companyId:int}/feedbacks/{feedbackId:int}/status", async (
+    int companyId,
+    int feedbackId,
+    UpdateStatusRequest request,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    var existing = await tenantDb.Feedbacks.FindAsync(feedbackId);
+    if (existing is null) return Results.NotFound();
+
+    existing.Status = request.Status;
+    await tenantDb.SaveChangesAsync();
+    return Results.Ok(existing);
+});
+
+app.MapDelete("/tenant/{companyId:int}/feedbacks/{feedbackId:int}", async (
+    int companyId,
+    int feedbackId,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    var existing = await tenantDb.Feedbacks.FindAsync(feedbackId);
+    if (existing is null) return Results.NotFound();
+
+    existing.IsActive = false;
+    await tenantDb.SaveChangesAsync();
+    return Results.Ok(existing);
 });
 
 app.Run();
