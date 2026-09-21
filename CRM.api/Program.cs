@@ -367,4 +367,165 @@ app.MapDelete("/tenant/{companyId:int}/feedbacks/{feedbackId:int}", async (
     return Results.Ok(existing);
 });
 
+app.MapPost("/tenant/{companyId:int}/membershipsales", async (
+    int companyId,
+    MembershipSale sale,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+
+    var customerExists = await tenantDb.Customers.AnyAsync(c => c.CustomerId == sale.CustomerId);
+    var planExists = await tenantDb.MembershipPlans.AnyAsync(p => p.MembershipPlanId == sale.MembershipPlanId);
+    if (!customerExists || !planExists)
+        return Results.BadRequest(new { message = "The specified customer or plan does not exist." });
+
+    tenantDb.MembershipSales.Add(sale);
+    await tenantDb.SaveChangesAsync();
+    return Results.Created($"/tenant/{companyId}/membershipsales/{sale.MembershipSaleId}", sale);
+});
+
+app.MapGet("/tenant/{companyId:int}/membershipsales", async (
+    int companyId,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    var sales = await tenantDb.MembershipSales
+        .Include(x => x.Customer)
+        .Include(x => x.MembershipPlan)
+        .AsNoTracking()
+        .OrderBy(x => x.MembershipSaleId)
+        .ToListAsync();
+    return Results.Ok(sales);
+});
+
+app.MapPost("/tenant/{companyId:int}/membershipsales/seed", async (
+    int companyId,
+    int count,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+
+    var customerIds = await tenantDb.Customers.Where(c => c.IsActive).Select(c => c.CustomerId).ToListAsync();
+    var plans = await tenantDb.MembershipPlans.Where(p => p.IsActive).ToListAsync();
+
+    if (customerIds.Count == 0 || plans.Count == 0)
+        return Results.BadRequest(new { message = "Create at least one active Customer and one active MembershipPlan before seeding sales." });
+
+    var random = new Random();
+    var sales = new List<MembershipSale>();
+
+    for (int i = 0; i < count; i++)
+    {
+        var plan = plans[random.Next(plans.Count)];
+        var daysAgo = random.Next(0, 180);
+
+        sales.Add(new MembershipSale
+        {
+            CustomerId = customerIds[random.Next(customerIds.Count)],
+            MembershipPlanId = plan.MembershipPlanId,
+            SaleDate = DateTime.UtcNow.AddDays(-daysAgo),
+            AmountPaid = plan.Price,
+            IsActive = true,
+        });
+    }
+
+    tenantDb.MembershipSales.AddRange(sales);
+    await tenantDb.SaveChangesAsync();
+    return Results.Ok(new { message = $"Seeded {count} membership sales.", count });
+});
+
+// Add this to Program.cs, right after the MembershipSale endpoints you just added,
+// and before app.Run();
+//
+// DEV-ONLY — wipes existing Customers/MembershipPlans/Inquiries/Feedback/
+// MembershipSales for this tenant, then reseeds fresh realistic-looking data.
+// Delete this endpoint before submitting/shipping — it is destructive by design.
+
+app.MapPost("/tenant/{companyId:int}/dev/reset-and-seed", async (
+    int companyId,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+
+    // 1. Delete in FK-safe order: children before parents.
+    tenantDb.MembershipSales.RemoveRange(tenantDb.MembershipSales);
+    tenantDb.Inquiries.RemoveRange(tenantDb.Inquiries);
+    tenantDb.Feedbacks.RemoveRange(tenantDb.Feedbacks);
+    await tenantDb.SaveChangesAsync();
+
+    tenantDb.Customers.RemoveRange(tenantDb.Customers);
+    tenantDb.MembershipPlans.RemoveRange(tenantDb.MembershipPlans);
+    await tenantDb.SaveChangesAsync();
+
+    var random = new Random();
+
+    // 2. Seed 5 realistic gym membership plans.
+    var plans = new List<MembershipPlan>
+    {
+        new() { PlanCode = "BASIC-01", PlanName = "Basic", Description = "Gym floor access only", Price = 799m, DurationInDays = 30, IsActive = true },
+        new() { PlanCode = "STD-01", PlanName = "Standard", Description = "Gym floor + group classes", Price = 1299m, DurationInDays = 30, IsActive = true },
+        new() { PlanCode = "GOLD-01", PlanName = "Gold", Description = "Standard + sauna and locker", Price = 1899m, DurationInDays = 30, IsActive = true },
+        new() { PlanCode = "PREM-01", PlanName = "Premium", Description = "Gold + 2 personal training sessions/month", Price = 2999m, DurationInDays = 30, IsActive = true },
+        new() { PlanCode = "VIP-01", PlanName = "Platinum", Description = "All access + unlimited personal training", Price = 4999m, DurationInDays = 30, IsActive = true },
+    };
+    tenantDb.MembershipPlans.AddRange(plans);
+    await tenantDb.SaveChangesAsync(); // save now so plans get real IDs before sales reference them
+
+    // 3. Seed 25 realistic-looking customers.
+    string[] firstNames = { "Juan", "Maria", "Jose", "Ana", "Pedro", "Carmen", "Miguel", "Rosa",
+        "Antonio", "Elena", "Carlos", "Sofia", "Luis", "Isabel", "Mark", "Grace", "James",
+        "Nicole", "Paul", "Angela", "John", "Andrea", "Daniel", "Kristine", "Ryan" };
+    string[] lastNames = { "Santos", "Reyes", "Cruz", "Bautista", "Garcia", "Torres", "Flores",
+        "Ramos", "Villanueva", "Castro", "Mendoza", "Aquino", "Gonzales", "Rivera", "Diaz",
+        "Fernandez", "Perez", "Lopez", "Dela Cruz", "Ramirez", "Domingo", "Salazar", "Navarro",
+        "Pascual", "Ocampo" };
+
+    var customers = new List<Customer>();
+    for (int i = 0; i < 25; i++)
+    {
+        var first = firstNames[i % firstNames.Length];
+        var last = lastNames[i % lastNames.Length];
+        customers.Add(new Customer
+        {
+            CustomerCode = $"CUST-{(i + 1):D4}",
+            CustomerName = $"{first} {last}",
+            ContactNumber = $"09{random.Next(100000000, 999999999)}",
+            EmailAddress = $"{first.ToLower()}.{last.ToLower().Replace(" ", "")}@example.com",
+            Address = $"{random.Next(1, 999)} Sample St., Davao City",
+            IsActive = true,
+        });
+    }
+    tenantDb.Customers.AddRange(customers);
+    await tenantDb.SaveChangesAsync(); // save now so customers get real IDs before sales reference them
+
+    // 4. Seed 200 membership sales spread across the last 6 months,
+    //    referencing the customers/plans just created.
+    var sales = new List<MembershipSale>();
+    for (int i = 0; i < 200; i++)
+    {
+        var plan = plans[random.Next(plans.Count)];
+        var customer = customers[random.Next(customers.Count)];
+        var daysAgo = random.Next(0, 180);
+
+        sales.Add(new MembershipSale
+        {
+            CustomerId = customer.CustomerId,
+            MembershipPlanId = plan.MembershipPlanId,
+            SaleDate = DateTime.UtcNow.AddDays(-daysAgo),
+            AmountPaid = plan.Price,
+            IsActive = true,
+        });
+    }
+    tenantDb.MembershipSales.AddRange(sales);
+    await tenantDb.SaveChangesAsync();
+
+    return Results.Ok(new
+    {
+        message = "Reset and reseed complete.",
+        plansCreated = plans.Count,
+        customersCreated = customers.Count,
+        salesCreated = sales.Count,
+    });
+});
+
 app.Run();

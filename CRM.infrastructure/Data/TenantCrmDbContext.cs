@@ -15,6 +15,7 @@ namespace CRM.infrastructure.Data
         public DbSet<MembershipPlan> MembershipPlans => Set<MembershipPlan>();
         public DbSet<Inquiry> Inquiries => Set<Inquiry>();
         public DbSet<Feedback> Feedbacks => Set<Feedback>();
+        public DbSet<MembershipSale> MembershipSales => Set<MembershipSale>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -71,6 +72,24 @@ namespace CRM.infrastructure.Data
                 entity.HasOne(x => x.Customer)
                       .WithMany()
                       .HasForeignKey(x => x.CustomerId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(x => x.IsActive).HasDefaultValue(true);
+            });
+
+            builder.Entity<MembershipSale>(entity =>
+            {
+                entity.HasKey(x => x.MembershipSaleId);
+                entity.Property(x => x.AmountPaid).HasPrecision(18, 2);
+
+                entity.HasOne(x => x.Customer)
+                      .WithMany()
+                      .HasForeignKey(x => x.CustomerId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(x => x.MembershipPlan)
+                      .WithMany()
+                      .HasForeignKey(x => x.MembershipPlanId)
                       .OnDelete(DeleteBehavior.Restrict);
 
                 entity.Property(x => x.IsActive).HasDefaultValue(true);

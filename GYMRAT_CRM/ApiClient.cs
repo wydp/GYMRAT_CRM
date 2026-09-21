@@ -101,6 +101,13 @@ namespace CRM.winforms
         }
 
         // ============================================================
+        // ===================== MEMBERSHIP SALES ========================
+        // ============================================================
+
+        public async Task<List<MembershipSale>> GetMembershipSalesAsync() =>
+            await _http.GetFromJsonAsync<List<MembershipSale>>($"/tenant/{CompanyId}/membershipsales", JsonOptions) ?? new();
+
+        // ============================================================
         // ===================== INQUIRIES ================================
         // ============================================================
 

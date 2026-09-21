@@ -145,6 +145,7 @@ namespace CRM.winforms
 
             UserControl moduleControl = moduleName switch
             {
+                "Dashboard" => new DashboardControl { Dock = DockStyle.Fill },
                 "Customers" => new CustomerControl { Dock = DockStyle.Fill },
                 "Membership Plans" => new MembershipPlanControl { Dock = DockStyle.Fill },
                 "Customer Support" => new CustomerSupportControl { Dock = DockStyle.Fill },

@@ -12,6 +12,10 @@ namespace CRM.winforms.Controls
         private readonly ApiClient _api = new ApiClient();
         private int? _selectedPlanId = null; // null = "Add" mode, set = "Update/Deactivate" mode
 
+        // Explicit Philippine Peso formatting — "C2" alone follows the OS's
+        // regional currency default, which isn't reliably ₱.
+        private static readonly CultureInfo PhCulture = CultureInfo.GetCultureInfo("en-PH");
+
         public MembershipPlanControl()
         {
             InitializeComponent();
@@ -75,7 +79,7 @@ namespace CRM.winforms.Controls
                     var row = new DataGridViewRow();
                     row.CreateCells(dgvPlans,
                         p.PlanCode, p.PlanName, p.Description,
-                        p.Price.ToString("C2"), p.DurationInDays,
+                        p.Price.ToString("C2", PhCulture), p.DurationInDays,
                         p.IsActive ? "Active" : "Inactive");
                     row.Tag = p.MembershipPlanId; // must be set before Add — see CustomerControl
 
