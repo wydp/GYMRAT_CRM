@@ -32,8 +32,8 @@ namespace CRM.winforms
         private static readonly Dictionary<string, string[]> RoleModules = new Dictionary<string, string[]>
         {
             ["Super Admin"] = new[] { "Software Subscription", "Terms & Conditions", "Subscription Analytics" },
-            ["Admin"] = new[] { "Dashboard", "Customers", "Membership Plans", "Branch Management", "Customer Support", "Marketing Automation", "Sales Force Automation", "Terms & Conditions" },
-            ["Manager"] = new[] { "Dashboard", "Customers", "Membership Plans", "Customer Support", "Marketing Automation", "Sales Force Automation", "Terms & Conditions" },
+            ["Admin"] = new[] { "Dashboard", "Reports","Customers", "Membership Plans", "Branch Management", "Customer Support", "Marketing Automation", "Sales Force Automation", "Terms & Conditions" },
+            ["Manager"] = new[] { "Dashboard", "Reports","Customers", "Membership Plans", "Customer Support", "Marketing Automation", "Sales Force Automation", "Terms & Conditions" },
             ["Staff"] = new[] { "Customers", "Customer Support", "Sales Force Automation", "Terms & Conditions" },
         };
 
@@ -146,9 +146,12 @@ namespace CRM.winforms
             UserControl moduleControl = moduleName switch
             {
                 "Dashboard" => new DashboardControl { Dock = DockStyle.Fill },
+                "Reports" => new ReportsControl { Dock = DockStyle.Fill },
                 "Customers" => new CustomerControl { Dock = DockStyle.Fill },
                 "Membership Plans" => new MembershipPlanControl { Dock = DockStyle.Fill },
                 "Customer Support" => new CustomerSupportControl { Dock = DockStyle.Fill },
+                "Marketing Automation" => new MarketingAutomationControl { Dock = DockStyle.Fill },
+                "Sales Force Automation" => new SalesForceControl { Dock = DockStyle.Fill },
                 _ => null,
             };
 

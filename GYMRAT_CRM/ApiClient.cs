@@ -108,6 +108,24 @@ namespace CRM.winforms
             await _http.GetFromJsonAsync<List<MembershipSale>>($"/tenant/{CompanyId}/membershipsales", JsonOptions) ?? new();
 
         // ============================================================
+        // ===================== REPORTS =================================
+        // ============================================================
+
+        public async Task<List<MembershipSale>> GetMembershipSalesReportAsync(DateTime from, DateTime to)
+        {
+            // End of day for 'to' — otherwise a sale at 14:00 on the selected
+            // day would be excluded, because ASP.NET Core parses "2026-06-30"
+            // as midnight at the START of that day.
+            var fromStr = from.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            var toStr = to.Date.AddDays(1).AddSeconds(-1)
+                .ToString("yyyy-MM-ddTHH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+
+            return await _http.GetFromJsonAsync<List<MembershipSale>>(
+                $"/tenant/{CompanyId}/membershipsales?from={fromStr}&to={toStr}",
+                JsonOptions) ?? new();
+        }
+
+        // ============================================================
         // ===================== INQUIRIES ================================
         // ============================================================
 
@@ -168,6 +186,80 @@ namespace CRM.winforms
         }
 
         // ============================================================
+        // ===================== CAMPAIGNS ===============================
+        // ============================================================
+
+        public async Task<List<Campaign>> GetCampaignsAsync() =>
+            await _http.GetFromJsonAsync<List<Campaign>>($"/tenant/{CompanyId}/campaigns", JsonOptions) ?? new();
+
+        public async Task<Campaign?> CreateCampaignAsync(Campaign campaign)
+        {
+            var response = await _http.PostAsJsonAsync($"/tenant/{CompanyId}/campaigns", campaign, JsonOptions);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                throw new System.InvalidOperationException("This Campaign Code is already in use — please choose a different one.");
+
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<Campaign>(JsonOptions);
+        }
+
+        public async Task UpdateCampaignAsync(int id, Campaign campaign)
+        {
+            var response = await _http.PutAsJsonAsync($"/tenant/{CompanyId}/campaigns/{id}", campaign, JsonOptions);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                throw new System.InvalidOperationException("This Campaign Code is already in use — please choose a different one.");
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task UpdateCampaignStatusAsync(int id, CampaignStatus status)
+        {
+            var response = await _http.PutAsJsonAsync($"/tenant/{CompanyId}/campaigns/{id}/status", new UpdateCampaignStatusRequest { Status = status }, JsonOptions);
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task DeactivateCampaignAsync(int id)
+        {
+            var response = await _http.DeleteAsync($"/tenant/{CompanyId}/campaigns/{id}");
+            response.EnsureSuccessStatusCode();
+        }
+
+        // ============================================================
+        // ===================== PROMOTIONS ==============================
+        // ============================================================
+
+        public async Task<List<Promotion>> GetPromotionsAsync() =>
+            await _http.GetFromJsonAsync<List<Promotion>>($"/tenant/{CompanyId}/promotions", JsonOptions) ?? new();
+
+        public async Task<Promotion?> CreatePromotionAsync(Promotion promotion)
+        {
+            var response = await _http.PostAsJsonAsync($"/tenant/{CompanyId}/promotions", promotion, JsonOptions);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                throw new System.InvalidOperationException("This Promotion Code is already in use — please choose a different one.");
+
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<Promotion>(JsonOptions);
+        }
+
+        public async Task UpdatePromotionAsync(int id, Promotion promotion)
+        {
+            var response = await _http.PutAsJsonAsync($"/tenant/{CompanyId}/promotions/{id}", promotion, JsonOptions);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                throw new System.InvalidOperationException("This Promotion Code is already in use — please choose a different one.");
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task DeactivatePromotionAsync(int id)
+        {
+            var response = await _http.DeleteAsync($"/tenant/{CompanyId}/promotions/{id}");
+            response.EnsureSuccessStatusCode();
+        }
+
+        // ============================================================
         // ===================== SHARED HELPERS ============================
         // ============================================================
 
@@ -180,6 +272,21 @@ namespace CRM.winforms
             }
             catch { }
             return fallback;
+        }
+
+        // ============================================================
+        // ===================== SALES FORCE =============================
+        // ============================================================
+
+        public async Task<MembershipSale?> CreateMembershipSaleAsync(MembershipSale sale)
+        {
+            var response = await _http.PostAsJsonAsync($"/tenant/{CompanyId}/membershipsales", sale, JsonOptions);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                throw new System.InvalidOperationException(await ExtractErrorMessageAsync(response, "Invalid sale data."));
+
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<MembershipSale>(JsonOptions);
         }
     }
 }

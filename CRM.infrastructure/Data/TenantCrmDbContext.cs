@@ -16,6 +16,8 @@ namespace CRM.infrastructure.Data
         public DbSet<Inquiry> Inquiries => Set<Inquiry>();
         public DbSet<Feedback> Feedbacks => Set<Feedback>();
         public DbSet<MembershipSale> MembershipSales => Set<MembershipSale>();
+        public DbSet<Campaign> Campaigns => Set<Campaign>();
+        public DbSet<Promotion> Promotions => Set<Promotion>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -92,6 +94,29 @@ namespace CRM.infrastructure.Data
                       .HasForeignKey(x => x.MembershipPlanId)
                       .OnDelete(DeleteBehavior.Restrict);
 
+                entity.Property(x => x.IsActive).HasDefaultValue(true);
+            });
+
+            builder.Entity<Campaign>(entity =>
+            {
+                entity.HasKey(x => x.CampaignId);
+                entity.Property(x => x.CampaignCode).HasMaxLength(50).IsRequired();
+                entity.Property(x => x.CampaignName).HasMaxLength(200).IsRequired();
+                entity.Property(x => x.Description).HasMaxLength(2000);
+                entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
+                entity.HasIndex(x => x.CampaignCode).IsUnique();
+                entity.Property(x => x.IsActive).HasDefaultValue(true);
+            });
+
+            builder.Entity<Promotion>(entity =>
+            {
+                entity.HasKey(x => x.PromotionId);
+                entity.Property(x => x.PromotionCode).HasMaxLength(50).IsRequired();
+                entity.Property(x => x.PromotionName).HasMaxLength(200).IsRequired();
+                entity.Property(x => x.Description).HasMaxLength(2000);
+                entity.Property(x => x.DiscountType).HasConversion<string>().HasMaxLength(20);
+                entity.Property(x => x.DiscountValue).HasPrecision(18, 2);
+                entity.HasIndex(x => x.PromotionCode).IsUnique();
                 entity.Property(x => x.IsActive).HasDefaultValue(true);
             });
         }

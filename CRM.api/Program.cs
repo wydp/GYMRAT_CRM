@@ -127,6 +127,7 @@ app.MapGet("/tenant/{companyId:int}/customers", async (
 {
     await using var tenantDb = await tenantFactory.CreateAsync(companyId);
     var customers = await tenantDb.Customers
+        .Where(x => x.IsActive)
         .AsNoTracking()
         .OrderBy(x => x.CustomerId)
         .ToListAsync();
@@ -202,6 +203,7 @@ app.MapGet("/tenant/{companyId:int}/membershipplans", async (
 {
     await using var tenantDb = await tenantFactory.CreateAsync(companyId);
     var plans = await tenantDb.MembershipPlans
+        .Where(x => x.IsActive)
         .AsNoTracking()
         .OrderBy(x => x.MembershipPlanId)
         .ToListAsync();
@@ -273,6 +275,7 @@ app.MapGet("/tenant/{companyId:int}/inquiries", async (
 {
     await using var tenantDb = await tenantFactory.CreateAsync(companyId);
     var inquiries = await tenantDb.Inquiries
+        .Where(x => x.IsActive)
         .Include(x => x.Customer)
         .AsNoTracking()
         .OrderBy(x => x.InquiryId)
@@ -331,6 +334,7 @@ app.MapGet("/tenant/{companyId:int}/feedbacks", async (
 {
     await using var tenantDb = await tenantFactory.CreateAsync(companyId);
     var feedbacks = await tenantDb.Feedbacks
+        .Where(x => x.IsActive)
         .Include(x => x.Customer)
         .AsNoTracking()
         .OrderBy(x => x.FeedbackId)
@@ -386,146 +390,338 @@ app.MapPost("/tenant/{companyId:int}/membershipsales", async (
 
 app.MapGet("/tenant/{companyId:int}/membershipsales", async (
     int companyId,
+    DateTime? from,
+    DateTime? to,
     ITenantDbContextFactory tenantFactory) =>
 {
     await using var tenantDb = await tenantFactory.CreateAsync(companyId);
-    var sales = await tenantDb.MembershipSales
+
+    var query = tenantDb.MembershipSales
+        .Where(x => x.IsActive)
+        .AsQueryable();
+
+    if (from.HasValue)
+        query = query.Where(x => x.SaleDate >= from.Value);
+
+    if (to.HasValue)
+        query = query.Where(x => x.SaleDate <= to.Value);
+
+    var sales = await query
         .Include(x => x.Customer)
         .Include(x => x.MembershipPlan)
         .AsNoTracking()
-        .OrderBy(x => x.MembershipSaleId)
+        .OrderBy(x => x.SaleDate)
         .ToListAsync();
+
     return Results.Ok(sales);
 });
 
-app.MapPost("/tenant/{companyId:int}/membershipsales/seed", async (
+
+// ==================== CAMPAIGNS ====================
+
+app.MapPost("/tenant/{companyId:int}/campaigns", async (
     int companyId,
-    int count,
+    Campaign campaign,
     ITenantDbContextFactory tenantFactory) =>
 {
     await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    tenantDb.Campaigns.Add(campaign);
 
-    var customerIds = await tenantDb.Customers.Where(c => c.IsActive).Select(c => c.CustomerId).ToListAsync();
-    var plans = await tenantDb.MembershipPlans.Where(p => p.IsActive).ToListAsync();
-
-    if (customerIds.Count == 0 || plans.Count == 0)
-        return Results.BadRequest(new { message = "Create at least one active Customer and one active MembershipPlan before seeding sales." });
-
-    var random = new Random();
-    var sales = new List<MembershipSale>();
-
-    for (int i = 0; i < count; i++)
+    try
     {
-        var plan = plans[random.Next(plans.Count)];
-        var daysAgo = random.Next(0, 180);
-
-        sales.Add(new MembershipSale
-        {
-            CustomerId = customerIds[random.Next(customerIds.Count)],
-            MembershipPlanId = plan.MembershipPlanId,
-            SaleDate = DateTime.UtcNow.AddDays(-daysAgo),
-            AmountPaid = plan.Price,
-            IsActive = true,
-        });
+        await tenantDb.SaveChangesAsync();
+    }
+    catch (DbUpdateException ex) when (ex.InnerException is SqlException sql && (sql.Number == 2601 || sql.Number == 2627))
+    {
+        return Results.Conflict(new { message = "A campaign with this code already exists." });
     }
 
-    tenantDb.MembershipSales.AddRange(sales);
-    await tenantDb.SaveChangesAsync();
-    return Results.Ok(new { message = $"Seeded {count} membership sales.", count });
+    return Results.Created($"/tenant/{companyId}/campaigns/{campaign.CampaignId}", campaign);
 });
 
-// Add this to Program.cs, right after the MembershipSale endpoints you just added,
-// and before app.Run();
-//
-// DEV-ONLY — wipes existing Customers/MembershipPlans/Inquiries/Feedback/
-// MembershipSales for this tenant, then reseeds fresh realistic-looking data.
-// Delete this endpoint before submitting/shipping — it is destructive by design.
-
-app.MapPost("/tenant/{companyId:int}/dev/reset-and-seed", async (
+app.MapGet("/tenant/{companyId:int}/campaigns", async (
     int companyId,
     ITenantDbContextFactory tenantFactory) =>
 {
     await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    var campaigns = await tenantDb.Campaigns
+        .Where(x => x.IsActive)
+        .AsNoTracking()
+        .OrderBy(x => x.CampaignId)
+        .ToListAsync();
+    return Results.Ok(campaigns);
+});
 
-    // 1. Delete in FK-safe order: children before parents.
-    tenantDb.MembershipSales.RemoveRange(tenantDb.MembershipSales);
-    tenantDb.Inquiries.RemoveRange(tenantDb.Inquiries);
-    tenantDb.Feedbacks.RemoveRange(tenantDb.Feedbacks);
-    await tenantDb.SaveChangesAsync();
+app.MapPut("/tenant/{companyId:int}/campaigns/{campaignId:int}", async (
+    int companyId,
+    int campaignId,
+    Campaign updated,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    var existing = await tenantDb.Campaigns.FindAsync(campaignId);
+    if (existing is null) return Results.NotFound();
 
-    tenantDb.Customers.RemoveRange(tenantDb.Customers);
-    tenantDb.MembershipPlans.RemoveRange(tenantDb.MembershipPlans);
-    await tenantDb.SaveChangesAsync();
+    existing.CampaignCode = updated.CampaignCode;
+    existing.CampaignName = updated.CampaignName;
+    existing.Description = updated.Description;
+    existing.StartDate = updated.StartDate;
+    existing.EndDate = updated.EndDate;
+    existing.Status = updated.Status;
+    existing.IsActive = updated.IsActive;
 
-    var random = new Random();
-
-    // 2. Seed 5 realistic gym membership plans.
-    var plans = new List<MembershipPlan>
+    try
     {
-        new() { PlanCode = "BASIC-01", PlanName = "Basic", Description = "Gym floor access only", Price = 799m, DurationInDays = 30, IsActive = true },
-        new() { PlanCode = "STD-01", PlanName = "Standard", Description = "Gym floor + group classes", Price = 1299m, DurationInDays = 30, IsActive = true },
-        new() { PlanCode = "GOLD-01", PlanName = "Gold", Description = "Standard + sauna and locker", Price = 1899m, DurationInDays = 30, IsActive = true },
-        new() { PlanCode = "PREM-01", PlanName = "Premium", Description = "Gold + 2 personal training sessions/month", Price = 2999m, DurationInDays = 30, IsActive = true },
-        new() { PlanCode = "VIP-01", PlanName = "Platinum", Description = "All access + unlimited personal training", Price = 4999m, DurationInDays = 30, IsActive = true },
-    };
-    tenantDb.MembershipPlans.AddRange(plans);
-    await tenantDb.SaveChangesAsync(); // save now so plans get real IDs before sales reference them
-
-    // 3. Seed 25 realistic-looking customers.
-    string[] firstNames = { "Juan", "Maria", "Jose", "Ana", "Pedro", "Carmen", "Miguel", "Rosa",
-        "Antonio", "Elena", "Carlos", "Sofia", "Luis", "Isabel", "Mark", "Grace", "James",
-        "Nicole", "Paul", "Angela", "John", "Andrea", "Daniel", "Kristine", "Ryan" };
-    string[] lastNames = { "Santos", "Reyes", "Cruz", "Bautista", "Garcia", "Torres", "Flores",
-        "Ramos", "Villanueva", "Castro", "Mendoza", "Aquino", "Gonzales", "Rivera", "Diaz",
-        "Fernandez", "Perez", "Lopez", "Dela Cruz", "Ramirez", "Domingo", "Salazar", "Navarro",
-        "Pascual", "Ocampo" };
-
-    var customers = new List<Customer>();
-    for (int i = 0; i < 25; i++)
-    {
-        var first = firstNames[i % firstNames.Length];
-        var last = lastNames[i % lastNames.Length];
-        customers.Add(new Customer
-        {
-            CustomerCode = $"CUST-{(i + 1):D4}",
-            CustomerName = $"{first} {last}",
-            ContactNumber = $"09{random.Next(100000000, 999999999)}",
-            EmailAddress = $"{first.ToLower()}.{last.ToLower().Replace(" ", "")}@example.com",
-            Address = $"{random.Next(1, 999)} Sample St., Davao City",
-            IsActive = true,
-        });
+        await tenantDb.SaveChangesAsync();
     }
-    tenantDb.Customers.AddRange(customers);
-    await tenantDb.SaveChangesAsync(); // save now so customers get real IDs before sales reference them
-
-    // 4. Seed 200 membership sales spread across the last 6 months,
-    //    referencing the customers/plans just created.
-    var sales = new List<MembershipSale>();
-    for (int i = 0; i < 200; i++)
+    catch (DbUpdateException ex) when (ex.InnerException is SqlException sql && (sql.Number == 2601 || sql.Number == 2627))
     {
-        var plan = plans[random.Next(plans.Count)];
-        var customer = customers[random.Next(customers.Count)];
-        var daysAgo = random.Next(0, 180);
-
-        sales.Add(new MembershipSale
-        {
-            CustomerId = customer.CustomerId,
-            MembershipPlanId = plan.MembershipPlanId,
-            SaleDate = DateTime.UtcNow.AddDays(-daysAgo),
-            AmountPaid = plan.Price,
-            IsActive = true,
-        });
+        return Results.Conflict(new { message = "A campaign with this code already exists." });
     }
-    tenantDb.MembershipSales.AddRange(sales);
-    await tenantDb.SaveChangesAsync();
 
-    return Results.Ok(new
+    return Results.Ok(existing);
+});
+
+app.MapPut("/tenant/{companyId:int}/campaigns/{campaignId:int}/status", async (
+    int companyId,
+    int campaignId,
+    UpdateCampaignStatusRequest request,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    var existing = await tenantDb.Campaigns.FindAsync(campaignId);
+    if (existing is null) return Results.NotFound();
+
+    existing.Status = request.Status;
+    await tenantDb.SaveChangesAsync();
+    return Results.Ok(existing);
+});
+
+app.MapDelete("/tenant/{companyId:int}/campaigns/{campaignId:int}", async (
+    int companyId,
+    int campaignId,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    var existing = await tenantDb.Campaigns.FindAsync(campaignId);
+    if (existing is null) return Results.NotFound();
+
+    existing.IsActive = false;
+    await tenantDb.SaveChangesAsync();
+    return Results.Ok(existing);
+});
+
+// ==================== PROMOTIONS ====================
+
+app.MapPost("/tenant/{companyId:int}/promotions", async (
+    int companyId,
+    Promotion promotion,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    tenantDb.Promotions.Add(promotion);
+
+    try
     {
-        message = "Reset and reseed complete.",
-        plansCreated = plans.Count,
-        customersCreated = customers.Count,
-        salesCreated = sales.Count,
+        await tenantDb.SaveChangesAsync();
+    }
+    catch (DbUpdateException ex) when (ex.InnerException is SqlException sql && (sql.Number == 2601 || sql.Number == 2627))
+    {
+        return Results.Conflict(new { message = "A promotion with this code already exists." });
+    }
+
+    return Results.Created($"/tenant/{companyId}/promotions/{promotion.PromotionId}", promotion);
+});
+
+app.MapGet("/tenant/{companyId:int}/promotions", async (
+    int companyId,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    var promotions = await tenantDb.Promotions
+        .Where(x => x.IsActive)
+        .AsNoTracking()
+        .OrderBy(x => x.PromotionId)
+        .ToListAsync();
+    return Results.Ok(promotions);
+});
+
+app.MapPut("/tenant/{companyId:int}/promotions/{promotionId:int}", async (
+    int companyId,
+    int promotionId,
+    Promotion updated,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    var existing = await tenantDb.Promotions.FindAsync(promotionId);
+    if (existing is null) return Results.NotFound();
+
+    existing.PromotionCode = updated.PromotionCode;
+    existing.PromotionName = updated.PromotionName;
+    existing.Description = updated.Description;
+    existing.DiscountType = updated.DiscountType;
+    existing.DiscountValue = updated.DiscountValue;
+    existing.StartDate = updated.StartDate;
+    existing.EndDate = updated.EndDate;
+    existing.IsActive = updated.IsActive;
+
+    try
+    {
+        await tenantDb.SaveChangesAsync();
+    }
+    catch (DbUpdateException ex) when (ex.InnerException is SqlException sql && (sql.Number == 2601 || sql.Number == 2627))
+    {
+        return Results.Conflict(new { message = "A promotion with this code already exists." });
+    }
+
+    return Results.Ok(existing);
+});
+
+app.MapDelete("/tenant/{companyId:int}/promotions/{promotionId:int}", async (
+    int companyId,
+    int promotionId,
+    ITenantDbContextFactory tenantFactory) =>
+{
+    await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+    var existing = await tenantDb.Promotions.FindAsync(promotionId);
+    if (existing is null) return Results.NotFound();
+
+    existing.IsActive = false;
+    await tenantDb.SaveChangesAsync();
+    return Results.Ok(existing);
+});
+
+// ==================== DEV-ONLY SEED ENDPOINTS ====================
+// These are wrapped in IsDevelopment() so they cannot fire in Production.
+// DELETE THEM ENTIRELY before final submission.
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapPost("/tenant/{companyId:int}/membershipsales/seed", async (
+        int companyId,
+        int count,
+        ITenantDbContextFactory tenantFactory) =>
+    {
+        await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+
+        var customerIds = await tenantDb.Customers.Where(c => c.IsActive).Select(c => c.CustomerId).ToListAsync();
+        var plans = await tenantDb.MembershipPlans.Where(p => p.IsActive).ToListAsync();
+
+        if (customerIds.Count == 0 || plans.Count == 0)
+            return Results.BadRequest(new { message = "Create at least one active Customer and one active MembershipPlan before seeding sales." });
+
+        var random = new Random();
+        var sales = new List<MembershipSale>();
+
+        for (int i = 0; i < count; i++)
+        {
+            var plan = plans[random.Next(plans.Count)];
+            var daysAgo = random.Next(0, 180);
+
+            sales.Add(new MembershipSale
+            {
+                CustomerId = customerIds[random.Next(customerIds.Count)],
+                MembershipPlanId = plan.MembershipPlanId,
+                SaleDate = DateTime.UtcNow.AddDays(-daysAgo),
+                AmountPaid = plan.Price,
+                IsActive = true,
+            });
+        }
+
+        tenantDb.MembershipSales.AddRange(sales);
+        await tenantDb.SaveChangesAsync();
+        return Results.Ok(new { message = $"Seeded {count} membership sales.", count });
     });
-});
+
+    // DEV-ONLY — wipes existing Customers/MembershipPlans/Inquiries/Feedback/
+    // MembershipSales for this tenant, then reseeds fresh realistic-looking data.
+    // Destructive by design. Delete before submitting.
+    app.MapPost("/tenant/{companyId:int}/dev/reset-and-seed", async (
+        int companyId,
+        ITenantDbContextFactory tenantFactory) =>
+    {
+        await using var tenantDb = await tenantFactory.CreateAsync(companyId);
+
+        // 1. Delete in FK-safe order: children before parents.
+        tenantDb.MembershipSales.RemoveRange(tenantDb.MembershipSales);
+        tenantDb.Inquiries.RemoveRange(tenantDb.Inquiries);
+        tenantDb.Feedbacks.RemoveRange(tenantDb.Feedbacks);
+        await tenantDb.SaveChangesAsync();
+
+        tenantDb.Customers.RemoveRange(tenantDb.Customers);
+        tenantDb.MembershipPlans.RemoveRange(tenantDb.MembershipPlans);
+        await tenantDb.SaveChangesAsync();
+
+        var random = new Random();
+
+        // 2. Seed 5 realistic gym membership plans.
+        var plans = new List<MembershipPlan>
+        {
+            new() { PlanCode = "BASIC-01", PlanName = "Basic", Description = "Gym floor access only", Price = 799m, DurationInDays = 30, IsActive = true },
+            new() { PlanCode = "STD-01", PlanName = "Standard", Description = "Gym floor + group classes", Price = 1299m, DurationInDays = 30, IsActive = true },
+            new() { PlanCode = "GOLD-01", PlanName = "Gold", Description = "Standard + sauna and locker", Price = 1899m, DurationInDays = 30, IsActive = true },
+            new() { PlanCode = "PREM-01", PlanName = "Premium", Description = "Gold + 2 personal training sessions/month", Price = 2999m, DurationInDays = 30, IsActive = true },
+            new() { PlanCode = "VIP-01", PlanName = "Platinum", Description = "All access + unlimited personal training", Price = 4999m, DurationInDays = 30, IsActive = true },
+        };
+        tenantDb.MembershipPlans.AddRange(plans);
+        await tenantDb.SaveChangesAsync(); // save now so plans get real IDs before sales reference them
+
+        // 3. Seed 25 realistic-looking customers.
+        string[] firstNames = { "Juan", "Maria", "Jose", "Ana", "Pedro", "Carmen", "Miguel", "Rosa",
+            "Antonio", "Elena", "Carlos", "Sofia", "Luis", "Isabel", "Mark", "Grace", "James",
+            "Nicole", "Paul", "Angela", "John", "Andrea", "Daniel", "Kristine", "Ryan" };
+        string[] lastNames = { "Santos", "Reyes", "Cruz", "Bautista", "Garcia", "Torres", "Flores",
+            "Ramos", "Villanueva", "Castro", "Mendoza", "Aquino", "Gonzales", "Rivera", "Diaz",
+            "Fernandez", "Perez", "Lopez", "Dela Cruz", "Ramirez", "Domingo", "Salazar", "Navarro",
+            "Pascual", "Ocampo" };
+
+        var customers = new List<Customer>();
+        for (int i = 0; i < 25; i++)
+        {
+            var first = firstNames[i % firstNames.Length];
+            var last = lastNames[i % lastNames.Length];
+            customers.Add(new Customer
+            {
+                CustomerCode = $"CUST-{(i + 1):D4}",
+                CustomerName = $"{first} {last}",
+                ContactNumber = $"09{random.Next(100000000, 999999999)}",
+                EmailAddress = $"{first.ToLower()}.{last.ToLower().Replace(" ", "")}@example.com",
+                Address = $"{random.Next(1, 999)} Sample St., Davao City",
+                IsActive = true,
+            });
+        }
+        tenantDb.Customers.AddRange(customers);
+        await tenantDb.SaveChangesAsync(); // save now so customers get real IDs before sales reference them
+
+        // 4. Seed 200 membership sales spread across the last 6 months,
+        //    referencing the customers/plans just created.
+        var sales = new List<MembershipSale>();
+        for (int i = 0; i < 200; i++)
+        {
+            var plan = plans[random.Next(plans.Count)];
+            var customer = customers[random.Next(customers.Count)];
+            var daysAgo = random.Next(0, 180);
+
+            sales.Add(new MembershipSale
+            {
+                CustomerId = customer.CustomerId,
+                MembershipPlanId = plan.MembershipPlanId,
+                SaleDate = DateTime.UtcNow.AddDays(-daysAgo),
+                AmountPaid = plan.Price,
+                IsActive = true,
+            });
+        }
+        tenantDb.MembershipSales.AddRange(sales);
+        await tenantDb.SaveChangesAsync();
+
+        return Results.Ok(new
+        {
+            message = "Reset and reseed complete.",
+            plansCreated = plans.Count,
+            customersCreated = customers.Count,
+            salesCreated = sales.Count,
+        });
+    });
+}
 
 app.Run();
