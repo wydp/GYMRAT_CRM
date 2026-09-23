@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace CRM.infrastructure.Migrations
 {
-    [DbContext(typeof(MasterErpDbContext))]
+    [DbContext(typeof(MasterCrmDbContext))]
     [Migration("20260907062505_AddDeviceToMasterErp")]
     partial class AddDeviceToMasterErp
     {

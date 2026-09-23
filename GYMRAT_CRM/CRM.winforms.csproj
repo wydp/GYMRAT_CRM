@@ -16,4 +16,10 @@
     <ProjectReference Include="..\CRM.domain\CRM.domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="Views\Form1.cs">
+      <SubType>Form</SubType>
+    </Compile>
+  </ItemGroup>
+
 </Project>

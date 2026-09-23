@@ -5,9 +5,9 @@ namespace CRM.infrastructure.Services
 {
     public class TenantDatabaseResolver : ITenantDatabaseResolver
     {
-        private readonly MasterErpDbContext _masterDb;
+        private readonly MasterCrmDbContext _masterDb;
 
-        public TenantDatabaseResolver(MasterErpDbContext masterDb)
+        public TenantDatabaseResolver(MasterCrmDbContext masterDb)
         {
             _masterDb = masterDb;
         }

@@ -10,6 +10,7 @@ namespace CRM.infrastructure.Data
         {
         }
 
+        public DbSet<Branch> Branches => Set<Branch>();
         public DbSet<Product> Products => Set<Product>();
         public DbSet<Customer> Customers => Set<Customer>();
         public DbSet<MembershipPlan> MembershipPlans => Set<MembershipPlan>();
@@ -22,6 +23,16 @@ namespace CRM.infrastructure.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            builder.Entity<Branch>(entity =>
+            {
+                entity.HasKey(x => x.BranchId);
+                entity.Property(x => x.BranchCode).HasMaxLength(50).IsRequired();
+                entity.Property(x => x.BranchName).HasMaxLength(200).IsRequired();
+                entity.Property(x => x.Address).HasMaxLength(500);
+                entity.Property(x => x.ContactNumber).HasMaxLength(50);
+                entity.HasIndex(x => x.BranchCode).IsUnique();
+            });
 
             builder.Entity<Product>(entity =>
             {
@@ -119,6 +130,8 @@ namespace CRM.infrastructure.Data
                 entity.HasIndex(x => x.PromotionCode).IsUnique();
                 entity.Property(x => x.IsActive).HasDefaultValue(true);
             });
+
+
         }
     }
 }

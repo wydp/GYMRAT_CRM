@@ -115,7 +115,7 @@ namespace CRM.winforms.Controls
             }
         }
 
-        private void DgvCampaigns_SelectionChanged(object sender, EventArgs e)
+        private void DgvCampaigns_SelectionChanged(object? sender, EventArgs e)
         {
             if (dgvCampaigns.SelectedRows.Count == 0) return;
 

@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.Net.Http.Headers;
 
 namespace CRM.winforms
 {
@@ -30,6 +31,15 @@ namespace CRM.winforms
             {
                 BaseAddress = new System.Uri("http://localhost:5004")
             };
+
+            // If a user is logged in, attach the JWT to every request.
+            // Token comes from AuthContext, set by the login form.
+            if (Model.AuthContext.IsLoggedIn)
+            {
+                _http.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue(
+                        "Bearer", Model.AuthContext.Token);
+            }
         }
 
         // ============================================================
@@ -288,5 +298,115 @@ namespace CRM.winforms
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadFromJsonAsync<MembershipSale>(JsonOptions);
         }
+
+        // Response shape from POST /auth/login
+        public class LoginResult
+        {
+            public int UserId { get; set; }
+            public string Username { get; set; } = string.Empty;
+            public string FullName { get; set; } = string.Empty;
+            public string RoleName { get; set; } = string.Empty;
+            public int? CompanyId { get; set; }
+            public int? BranchId { get; set; }
+            public List<string> Permissions { get; set; } = new();
+            public string Token { get; set; } = string.Empty;
+            public DateTime ExpiresAt { get; set; }
+        }
+
+        // ============================================================
+        // ===================== AUTH ====================================
+        // ============================================================
+
+        public async Task<LoginResult?> LoginAsync(string username, string password)
+        {
+            var response = await _http.PostAsJsonAsync("/auth/login",
+                new { username, password }, JsonOptions);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                return null; // invalid credentials
+
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<LoginResult>(JsonOptions);
+        }
+
+        // ---- Staff Management ----
+
+        public class StaffDto
+        {
+            public int UserId { get; set; }
+            public string Username { get; set; } = string.Empty;
+            public string FullName { get; set; } = string.Empty;
+            public string? Email { get; set; }
+            public string RoleName { get; set; } = string.Empty;
+            public int? CompanyId { get; set; }
+            public int? BranchId { get; set; }
+            public bool IsActive { get; set; }
+            public DateTime CreatedAt { get; set; }
+            public DateTime? LastLoginAt { get; set; }
+        }
+
+        public class CreateStaffRequest
+        {
+            public string Username { get; set; } = string.Empty;
+            public string Password { get; set; } = string.Empty;
+            public string FullName { get; set; } = string.Empty;
+            public string? Email { get; set; }
+            public string RoleName { get; set; } = string.Empty;
+            public int? BranchId { get; set; }
+        }
+
+        public class UpdateStaffRequest
+        {
+            public string Username { get; set; } = string.Empty;
+            public string RoleName { get; set; } = string.Empty;
+            public string FullName { get; set; } = string.Empty;
+            public string? Email { get; set; }
+            public int? BranchId { get; set; }
+            public bool IsActive { get; set; }
+        }
+
+
+        public async Task<List<StaffDto>> GetStaffAsync() =>
+    await _http.GetFromJsonAsync<List<StaffDto>>("/staff", JsonOptions) ?? new();
+
+        public async Task<StaffDto?> CreateStaffAsync(CreateStaffRequest request)
+        {
+            var response = await _http.PostAsJsonAsync("/staff", request, JsonOptions);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                throw new System.InvalidOperationException("This username is already taken.");
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                throw new System.InvalidOperationException("You do not have permission to create this role.");
+
+            if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                throw new System.InvalidOperationException(await ExtractErrorMessageAsync(response, "Invalid staff data."));
+
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<StaffDto>(JsonOptions);
+        }
+
+        public async Task UpdateStaffAsync(int id, UpdateStaffRequest request)
+        {
+            var response = await _http.PutAsJsonAsync($"/staff/{id}", request, JsonOptions);
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task DeactivateStaffAsync(int id)
+        {
+            var response = await _http.DeleteAsync($"/staff/{id}");
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task ResetStaffPasswordAsync(int id, string newPassword)
+        {
+            var response = await _http.PostAsJsonAsync($"/staff/{id}/reset-password",
+                new { newPassword }, JsonOptions);
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task<List<CRM.domain.Entities.Branch>> GetBranchesAsync() =>
+    await _http.GetFromJsonAsync<List<CRM.domain.Entities.Branch>>(
+        $"/tenant/{CompanyId}/branches", JsonOptions) ?? new();
     }
 }

@@ -134,7 +134,7 @@ namespace CRM.winforms.Controls
                 ? $"{value:0.##}%"
                 : value.ToString("C2", PesoCulture);
 
-        private void DgvPromotions_SelectionChanged(object sender, EventArgs e)
+        private void DgvPromotions_SelectionChanged(object? sender, EventArgs e)
         {
             if (dgvPromotions.SelectedRows.Count == 0) return;
 

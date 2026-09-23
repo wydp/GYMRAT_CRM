@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace CRM.infrastructure.Migrations
 {
-    [DbContext(typeof(MasterErpDbContext))]
+    [DbContext(typeof(MasterCrmDbContext))]
     [Migration("20260910035729_AddCredentialKeyToCompanyDatabase")]
     partial class AddCredentialKeyToCompanyDatabase
     {
