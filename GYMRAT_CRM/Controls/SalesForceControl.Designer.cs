@@ -15,345 +15,391 @@ namespace CRM.winforms.Controls
 
         private void InitializeComponent()
         {
-            this.tabControl = new System.Windows.Forms.TabControl();
-            this.tabProcessSale = new System.Windows.Forms.TabPage();
-            this.dgvRecentSales = new System.Windows.Forms.DataGridView();
-            this.lblRecent = new System.Windows.Forms.Label();
-            this.btnClear = new System.Windows.Forms.Button();
-            this.btnProcessSale = new System.Windows.Forms.Button();
-            this.dtpSaleDate = new System.Windows.Forms.DateTimePicker();
-            this.lblSaleDate = new System.Windows.Forms.Label();
-            this.numAmount = new System.Windows.Forms.NumericUpDown();
-            this.lblAmount = new System.Windows.Forms.Label();
-            this.cmbPlan = new System.Windows.Forms.ComboBox();
-            this.lblPlan = new System.Windows.Forms.Label();
-            this.cmbCustomer = new System.Windows.Forms.ComboBox();
-            this.lblCustomer = new System.Windows.Forms.Label();
-            this.tabMemberships = new System.Windows.Forms.TabPage();
-            this.tabRenewals = new System.Windows.Forms.TabPage();
-            this.tabLeads = new System.Windows.Forms.TabPage();
-            this.dgvRenewals = new System.Windows.Forms.DataGridView();
-            this.lblRenewalsSummary = new System.Windows.Forms.Label();
-            this.btnRenew = new System.Windows.Forms.Button();
-            this.btnRefreshRenewals = new System.Windows.Forms.Button();
-            this.chkMembershipsActiveOnly = new System.Windows.Forms.CheckBox();
-            this.btnRefreshMemberships = new System.Windows.Forms.Button();
-            this.lblMembershipsSummary = new System.Windows.Forms.Label();
-            this.dgvMemberships = new System.Windows.Forms.DataGridView();
-            this.tabRenewals.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dgvRenewals)).BeginInit();
-            this.tabControl.SuspendLayout();
-            this.tabProcessSale.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dgvRecentSales)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numAmount)).BeginInit();
-            this.tabMemberships.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dgvMemberships)).BeginInit();
-            this.SuspendLayout();
-            //
+            tabControl = new TabControl();
+            tabProcessSale = new TabPage();
+            dgvRecentSales = new DataGridView();
+            lblRecent = new Label();
+            btnClear = new Button();
+            btnProcessSale = new Button();
+            dtpSaleDate = new DateTimePicker();
+            lblSaleDate = new Label();
+            numAmount = new NumericUpDown();
+            lblAmount = new Label();
+            cmbPlan = new ComboBox();
+            lblPlan = new Label();
+            cmbCustomer = new ComboBox();
+            lblCustomer = new Label();
+            tabMemberships = new TabPage();
+            dgvMemberships = new DataGridView();
+            lblMembershipsSummary = new Label();
+            btnRefreshMemberships = new Button();
+            chkMembershipsActiveOnly = new CheckBox();
+            tabRenewals = new TabPage();
+            dgvRenewals = new DataGridView();
+            lblRenewalsSummary = new Label();
+            btnRenew = new Button();
+            btnRefreshRenewals = new Button();
+            tabLeads = new TabPage();
+            tabCheckIn = new TabPage();
+            tabHistory = new TabPage();
+            tabControl.SuspendLayout();
+            tabProcessSale.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)dgvRecentSales).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)numAmount).BeginInit();
+            tabMemberships.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)dgvMemberships).BeginInit();
+            tabRenewals.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)dgvRenewals).BeginInit();
+            SuspendLayout();
+            // 
             // tabControl
-            //
-            this.tabControl.Controls.Add(this.tabProcessSale);
-            this.tabControl.Controls.Add(this.tabMemberships);
-            this.tabControl.Controls.Add(this.tabRenewals);
-            this.tabControl.Controls.Add(this.tabLeads);
-            this.tabControl.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tabControl.Location = new System.Drawing.Point(0, 0);
-            this.tabControl.Name = "tabControl";
-            this.tabControl.SelectedIndex = 0;
-            this.tabControl.Size = new System.Drawing.Size(800, 600);
-            this.tabControl.TabIndex = 0;
-            //
+            // 
+            tabControl.Controls.Add(tabProcessSale);
+            tabControl.Controls.Add(tabMemberships);
+            tabControl.Controls.Add(tabRenewals);
+            tabControl.Controls.Add(tabLeads);
+            tabControl.Controls.Add(tabCheckIn);
+            tabControl.Controls.Add(tabHistory);
+            tabControl.Dock = DockStyle.Fill;
+            tabControl.Location = new Point(0, 0);
+            tabControl.Margin = new Padding(4, 5, 4, 5);
+            tabControl.Name = "tabControl";
+            tabControl.SelectedIndex = 0;
+            tabControl.Size = new Size(1143, 1000);
+            tabControl.TabIndex = 0;
+            // 
             // tabProcessSale
-            //
-            this.tabProcessSale.Controls.Add(this.dgvRecentSales);
-            this.tabProcessSale.Controls.Add(this.lblRecent);
-            this.tabProcessSale.Controls.Add(this.btnClear);
-            this.tabProcessSale.Controls.Add(this.btnProcessSale);
-            this.tabProcessSale.Controls.Add(this.dtpSaleDate);
-            this.tabProcessSale.Controls.Add(this.lblSaleDate);
-            this.tabProcessSale.Controls.Add(this.numAmount);
-            this.tabProcessSale.Controls.Add(this.lblAmount);
-            this.tabProcessSale.Controls.Add(this.cmbPlan);
-            this.tabProcessSale.Controls.Add(this.lblPlan);
-            this.tabProcessSale.Controls.Add(this.cmbCustomer);
-            this.tabProcessSale.Controls.Add(this.lblCustomer);
-            this.tabProcessSale.Location = new System.Drawing.Point(4, 24);
-            this.tabProcessSale.Name = "tabProcessSale";
-            this.tabProcessSale.Padding = new System.Windows.Forms.Padding(3);
-            this.tabProcessSale.Size = new System.Drawing.Size(792, 572);
-            this.tabProcessSale.TabIndex = 0;
-            this.tabProcessSale.Text = "Process Sale";
-            this.tabProcessSale.UseVisualStyleBackColor = true;
-            //
+            // 
+            tabProcessSale.Controls.Add(dgvRecentSales);
+            tabProcessSale.Controls.Add(lblRecent);
+            tabProcessSale.Controls.Add(btnClear);
+            tabProcessSale.Controls.Add(btnProcessSale);
+            tabProcessSale.Controls.Add(dtpSaleDate);
+            tabProcessSale.Controls.Add(lblSaleDate);
+            tabProcessSale.Controls.Add(numAmount);
+            tabProcessSale.Controls.Add(lblAmount);
+            tabProcessSale.Controls.Add(cmbPlan);
+            tabProcessSale.Controls.Add(lblPlan);
+            tabProcessSale.Controls.Add(cmbCustomer);
+            tabProcessSale.Controls.Add(lblCustomer);
+            tabProcessSale.Location = new Point(4, 34);
+            tabProcessSale.Margin = new Padding(4, 5, 4, 5);
+            tabProcessSale.Name = "tabProcessSale";
+            tabProcessSale.Padding = new Padding(4, 5, 4, 5);
+            tabProcessSale.Size = new Size(1135, 962);
+            tabProcessSale.TabIndex = 0;
+            tabProcessSale.Text = "Process Sale";
+            tabProcessSale.UseVisualStyleBackColor = true;
+            // 
             // dgvRecentSales
-            //
-            this.dgvRecentSales.AllowUserToAddRows = false;
-            this.dgvRecentSales.AllowUserToDeleteRows = false;
-            this.dgvRecentSales.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.dgvRecentSales.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dgvRecentSales.Location = new System.Drawing.Point(20, 215);
-            this.dgvRecentSales.Name = "dgvRecentSales";
-            this.dgvRecentSales.ReadOnly = true;
-            this.dgvRecentSales.RowHeadersWidth = 51;
-            this.dgvRecentSales.Size = new System.Drawing.Size(750, 340);
-            this.dgvRecentSales.TabIndex = 11;
-            //
+            // 
+            dgvRecentSales.AllowUserToAddRows = false;
+            dgvRecentSales.AllowUserToDeleteRows = false;
+            dgvRecentSales.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            dgvRecentSales.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvRecentSales.Location = new Point(29, 358);
+            dgvRecentSales.Margin = new Padding(4, 5, 4, 5);
+            dgvRecentSales.Name = "dgvRecentSales";
+            dgvRecentSales.ReadOnly = true;
+            dgvRecentSales.RowHeadersWidth = 51;
+            dgvRecentSales.Size = new Size(1071, 567);
+            dgvRecentSales.TabIndex = 11;
+            // 
             // lblRecent
-            //
-            this.lblRecent.AutoSize = true;
-            this.lblRecent.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
-            this.lblRecent.ForeColor = System.Drawing.Color.FromArgb(31, 41, 55);
-            this.lblRecent.Location = new System.Drawing.Point(20, 190);
-            this.lblRecent.Name = "lblRecent";
-            this.lblRecent.Size = new System.Drawing.Size(200, 19);
-            this.lblRecent.TabIndex = 10;
-            this.lblRecent.Text = "Recent Sales";
-            //
+            // 
+            lblRecent.AutoSize = true;
+            lblRecent.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            lblRecent.ForeColor = Color.FromArgb(31, 41, 55);
+            lblRecent.Location = new Point(29, 317);
+            lblRecent.Margin = new Padding(4, 0, 4, 0);
+            lblRecent.Name = "lblRecent";
+            lblRecent.Size = new Size(131, 28);
+            lblRecent.TabIndex = 10;
+            lblRecent.Text = "Recent Sales";
+            // 
             // btnClear
-            //
-            this.btnClear.Location = new System.Drawing.Point(170, 140);
-            this.btnClear.Name = "btnClear";
-            this.btnClear.Size = new System.Drawing.Size(100, 32);
-            this.btnClear.TabIndex = 9;
-            this.btnClear.Text = "Clear";
-            this.btnClear.UseVisualStyleBackColor = true;
-            //
+            // 
+            btnClear.Location = new Point(243, 233);
+            btnClear.Margin = new Padding(4, 5, 4, 5);
+            btnClear.Name = "btnClear";
+            btnClear.Size = new Size(143, 53);
+            btnClear.TabIndex = 9;
+            btnClear.Text = "Clear";
+            btnClear.UseVisualStyleBackColor = true;
+            // 
             // btnProcessSale
-            //
-            this.btnProcessSale.BackColor = System.Drawing.Color.FromArgb(21, 128, 61);
-            this.btnProcessSale.FlatAppearance.BorderSize = 0;
-            this.btnProcessSale.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnProcessSale.ForeColor = System.Drawing.Color.White;
-            this.btnProcessSale.Location = new System.Drawing.Point(20, 140);
-            this.btnProcessSale.Name = "btnProcessSale";
-            this.btnProcessSale.Size = new System.Drawing.Size(140, 32);
-            this.btnProcessSale.TabIndex = 8;
-            this.btnProcessSale.Text = "Process Sale";
-            this.btnProcessSale.UseVisualStyleBackColor = false;
-            //
+            // 
+            btnProcessSale.BackColor = Color.FromArgb(21, 128, 61);
+            btnProcessSale.FlatAppearance.BorderSize = 0;
+            btnProcessSale.FlatStyle = FlatStyle.Flat;
+            btnProcessSale.ForeColor = Color.White;
+            btnProcessSale.Location = new Point(29, 233);
+            btnProcessSale.Margin = new Padding(4, 5, 4, 5);
+            btnProcessSale.Name = "btnProcessSale";
+            btnProcessSale.Size = new Size(200, 53);
+            btnProcessSale.TabIndex = 8;
+            btnProcessSale.Text = "Process Sale";
+            btnProcessSale.UseVisualStyleBackColor = false;
+            // 
             // dtpSaleDate
-            //
-            this.dtpSaleDate.Format = System.Windows.Forms.DateTimePickerFormat.Short;
-            this.dtpSaleDate.Location = new System.Drawing.Point(220, 100);
-            this.dtpSaleDate.Name = "dtpSaleDate";
-            this.dtpSaleDate.Size = new System.Drawing.Size(180, 23);
-            this.dtpSaleDate.TabIndex = 7;
-            //
+            // 
+            dtpSaleDate.Format = DateTimePickerFormat.Short;
+            dtpSaleDate.Location = new Point(314, 167);
+            dtpSaleDate.Margin = new Padding(4, 5, 4, 5);
+            dtpSaleDate.Name = "dtpSaleDate";
+            dtpSaleDate.Size = new Size(255, 31);
+            dtpSaleDate.TabIndex = 7;
+            // 
             // lblSaleDate
-            //
-            this.lblSaleDate.AutoSize = true;
-            this.lblSaleDate.Location = new System.Drawing.Point(220, 80);
-            this.lblSaleDate.Name = "lblSaleDate";
-            this.lblSaleDate.Size = new System.Drawing.Size(55, 15);
-            this.lblSaleDate.TabIndex = 6;
-            this.lblSaleDate.Text = "Sale Date";
-            //
+            // 
+            lblSaleDate.AutoSize = true;
+            lblSaleDate.Location = new Point(314, 133);
+            lblSaleDate.Margin = new Padding(4, 0, 4, 0);
+            lblSaleDate.Name = "lblSaleDate";
+            lblSaleDate.Size = new Size(86, 25);
+            lblSaleDate.TabIndex = 6;
+            lblSaleDate.Text = "Sale Date";
+            // 
             // numAmount
-            //
-            this.numAmount.DecimalPlaces = 2;
-            this.numAmount.Location = new System.Drawing.Point(20, 100);
-            this.numAmount.Maximum = new decimal(new int[] { 1000000, 0, 0, 0 });
-            this.numAmount.Name = "numAmount";
-            this.numAmount.Size = new System.Drawing.Size(180, 23);
-            this.numAmount.TabIndex = 5;
-            //
+            // 
+            numAmount.DecimalPlaces = 2;
+            numAmount.Location = new Point(29, 167);
+            numAmount.Margin = new Padding(4, 5, 4, 5);
+            numAmount.Maximum = new decimal(new int[] { 1000000, 0, 0, 0 });
+            numAmount.Name = "numAmount";
+            numAmount.Size = new Size(257, 31);
+            numAmount.TabIndex = 5;
+            // 
             // lblAmount
-            //
-            this.lblAmount.AutoSize = true;
-            this.lblAmount.Location = new System.Drawing.Point(20, 80);
-            this.lblAmount.Name = "lblAmount";
-            this.lblAmount.Size = new System.Drawing.Size(51, 15);
-            this.lblAmount.TabIndex = 4;
-            this.lblAmount.Text = "Amount";
-            //
+            // 
+            lblAmount.AutoSize = true;
+            lblAmount.Location = new Point(29, 133);
+            lblAmount.Margin = new Padding(4, 0, 4, 0);
+            lblAmount.Name = "lblAmount";
+            lblAmount.Size = new Size(77, 25);
+            lblAmount.TabIndex = 4;
+            lblAmount.Text = "Amount";
+            // 
             // cmbPlan
-            //
-            this.cmbPlan.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cmbPlan.Location = new System.Drawing.Point(320, 40);
-            this.cmbPlan.Name = "cmbPlan";
-            this.cmbPlan.Size = new System.Drawing.Size(280, 23);
-            this.cmbPlan.TabIndex = 3;
-            //
+            // 
+            cmbPlan.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbPlan.Location = new Point(457, 67);
+            cmbPlan.Margin = new Padding(4, 5, 4, 5);
+            cmbPlan.Name = "cmbPlan";
+            cmbPlan.Size = new Size(398, 33);
+            cmbPlan.TabIndex = 3;
+            // 
             // lblPlan
-            //
-            this.lblPlan.AutoSize = true;
-            this.lblPlan.Location = new System.Drawing.Point(320, 20);
-            this.lblPlan.Name = "lblPlan";
-            this.lblPlan.Size = new System.Drawing.Size(31, 15);
-            this.lblPlan.TabIndex = 2;
-            this.lblPlan.Text = "Plan";
-            //
+            // 
+            lblPlan.AutoSize = true;
+            lblPlan.Location = new Point(457, 33);
+            lblPlan.Margin = new Padding(4, 0, 4, 0);
+            lblPlan.Name = "lblPlan";
+            lblPlan.Size = new Size(45, 25);
+            lblPlan.TabIndex = 2;
+            lblPlan.Text = "Plan";
+            // 
             // cmbCustomer
-            //
-            this.cmbCustomer.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cmbCustomer.Location = new System.Drawing.Point(20, 40);
-            this.cmbCustomer.Name = "cmbCustomer";
-            this.cmbCustomer.Size = new System.Drawing.Size(280, 23);
-            this.cmbCustomer.TabIndex = 1;
-            //
+            // 
+            cmbCustomer.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbCustomer.Location = new Point(29, 67);
+            cmbCustomer.Margin = new Padding(4, 5, 4, 5);
+            cmbCustomer.Name = "cmbCustomer";
+            cmbCustomer.Size = new Size(398, 33);
+            cmbCustomer.TabIndex = 1;
+            // 
             // lblCustomer
-            //
-            this.lblCustomer.AutoSize = true;
-            this.lblCustomer.Location = new System.Drawing.Point(20, 20);
-            this.lblCustomer.Name = "lblCustomer";
-            this.lblCustomer.Size = new System.Drawing.Size(59, 15);
-            this.lblCustomer.TabIndex = 0;
-            this.lblCustomer.Text = "Customer";
-            //
+            // 
+            lblCustomer.AutoSize = true;
+            lblCustomer.Location = new Point(29, 33);
+            lblCustomer.Margin = new Padding(4, 0, 4, 0);
+            lblCustomer.Name = "lblCustomer";
+            lblCustomer.Size = new Size(89, 25);
+            lblCustomer.TabIndex = 0;
+            lblCustomer.Text = "Customer";
+            // 
             // tabMemberships
-            //
-            this.tabMemberships.Controls.Add(this.dgvMemberships);
-            this.tabMemberships.Controls.Add(this.lblMembershipsSummary);
-            this.tabMemberships.Controls.Add(this.btnRefreshMemberships);
-            this.tabMemberships.Controls.Add(this.chkMembershipsActiveOnly);
-            this.tabMemberships.Location = new System.Drawing.Point(4, 24);
-            this.tabMemberships.Name = "tabMemberships";
-            this.tabMemberships.Padding = new System.Windows.Forms.Padding(3);
-            this.tabMemberships.Size = new System.Drawing.Size(792, 572);
-            this.tabMemberships.TabIndex = 1;
-            this.tabMemberships.Text = "Memberships";
-            this.tabMemberships.UseVisualStyleBackColor = true;
-            //
-            // chkMembershipsActiveOnly
-            //
-            this.chkMembershipsActiveOnly.AutoSize = true;
-            this.chkMembershipsActiveOnly.Checked = true;
-            this.chkMembershipsActiveOnly.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.chkMembershipsActiveOnly.Location = new System.Drawing.Point(20, 20);
-            this.chkMembershipsActiveOnly.Name = "chkMembershipsActiveOnly";
-            this.chkMembershipsActiveOnly.Size = new System.Drawing.Size(150, 19);
-            this.chkMembershipsActiveOnly.TabIndex = 0;
-            this.chkMembershipsActiveOnly.Text = "Active memberships only";
-            this.chkMembershipsActiveOnly.UseVisualStyleBackColor = true;
-            //
-            // btnRefreshMemberships
-            //
-            this.btnRefreshMemberships.Location = new System.Drawing.Point(190, 16);
-            this.btnRefreshMemberships.Name = "btnRefreshMemberships";
-            this.btnRefreshMemberships.Size = new System.Drawing.Size(100, 26);
-            this.btnRefreshMemberships.TabIndex = 1;
-            this.btnRefreshMemberships.Text = "Refresh";
-            this.btnRefreshMemberships.UseVisualStyleBackColor = true;
-            //
-            // lblMembershipsSummary
-            //
-            this.lblMembershipsSummary.AutoSize = true;
-            this.lblMembershipsSummary.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
-            this.lblMembershipsSummary.ForeColor = System.Drawing.Color.FromArgb(31, 41, 55);
-            this.lblMembershipsSummary.Location = new System.Drawing.Point(20, 55);
-            this.lblMembershipsSummary.Name = "lblMembershipsSummary";
-            this.lblMembershipsSummary.Size = new System.Drawing.Size(300, 19);
-            this.lblMembershipsSummary.TabIndex = 2;
-            this.lblMembershipsSummary.Text = "Click Refresh to load memberships.";
-            //
+            // 
+            tabMemberships.Controls.Add(dgvMemberships);
+            tabMemberships.Controls.Add(lblMembershipsSummary);
+            tabMemberships.Controls.Add(btnRefreshMemberships);
+            tabMemberships.Controls.Add(chkMembershipsActiveOnly);
+            tabMemberships.Location = new Point(4, 34);
+            tabMemberships.Margin = new Padding(4, 5, 4, 5);
+            tabMemberships.Name = "tabMemberships";
+            tabMemberships.Padding = new Padding(4, 5, 4, 5);
+            tabMemberships.Size = new Size(1135, 962);
+            tabMemberships.TabIndex = 1;
+            tabMemberships.Text = "Memberships";
+            tabMemberships.UseVisualStyleBackColor = true;
+            // 
             // dgvMemberships
-            //
-            this.dgvMemberships.AllowUserToAddRows = false;
-            this.dgvMemberships.AllowUserToDeleteRows = false;
-            this.dgvMemberships.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.dgvMemberships.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dgvMemberships.Location = new System.Drawing.Point(20, 85);
-            this.dgvMemberships.Name = "dgvMemberships";
-            this.dgvMemberships.ReadOnly = true;
-            this.dgvMemberships.RowHeadersWidth = 51;
-            this.dgvMemberships.Size = new System.Drawing.Size(750, 470);
-            this.dgvMemberships.TabIndex = 3;
-            //
+            // 
+            dgvMemberships.AllowUserToAddRows = false;
+            dgvMemberships.AllowUserToDeleteRows = false;
+            dgvMemberships.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            dgvMemberships.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvMemberships.Location = new Point(29, 142);
+            dgvMemberships.Margin = new Padding(4, 5, 4, 5);
+            dgvMemberships.Name = "dgvMemberships";
+            dgvMemberships.ReadOnly = true;
+            dgvMemberships.RowHeadersWidth = 51;
+            dgvMemberships.Size = new Size(1071, 783);
+            dgvMemberships.TabIndex = 3;
+            // 
+            // lblMembershipsSummary
+            // 
+            lblMembershipsSummary.AutoSize = true;
+            lblMembershipsSummary.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            lblMembershipsSummary.ForeColor = Color.FromArgb(31, 41, 55);
+            lblMembershipsSummary.Location = new Point(29, 92);
+            lblMembershipsSummary.Margin = new Padding(4, 0, 4, 0);
+            lblMembershipsSummary.Name = "lblMembershipsSummary";
+            lblMembershipsSummary.Size = new Size(345, 28);
+            lblMembershipsSummary.TabIndex = 2;
+            lblMembershipsSummary.Text = "Click Refresh to load memberships.";
+            // 
+            // btnRefreshMemberships
+            // 
+            btnRefreshMemberships.Location = new Point(271, 27);
+            btnRefreshMemberships.Margin = new Padding(4, 5, 4, 5);
+            btnRefreshMemberships.Name = "btnRefreshMemberships";
+            btnRefreshMemberships.Size = new Size(143, 43);
+            btnRefreshMemberships.TabIndex = 1;
+            btnRefreshMemberships.Text = "Refresh";
+            btnRefreshMemberships.UseVisualStyleBackColor = true;
+            // 
+            // chkMembershipsActiveOnly
+            // 
+            chkMembershipsActiveOnly.AutoSize = true;
+            chkMembershipsActiveOnly.Checked = true;
+            chkMembershipsActiveOnly.CheckState = CheckState.Checked;
+            chkMembershipsActiveOnly.Location = new Point(29, 33);
+            chkMembershipsActiveOnly.Margin = new Padding(4, 5, 4, 5);
+            chkMembershipsActiveOnly.Name = "chkMembershipsActiveOnly";
+            chkMembershipsActiveOnly.Size = new Size(238, 29);
+            chkMembershipsActiveOnly.TabIndex = 0;
+            chkMembershipsActiveOnly.Text = "Active memberships only";
+            chkMembershipsActiveOnly.UseVisualStyleBackColor = true;
+            // 
             // tabRenewals
-            //
-            this.tabRenewals.Controls.Add(this.dgvRenewals);
-            this.tabRenewals.Controls.Add(this.lblRenewalsSummary);
-            this.tabRenewals.Controls.Add(this.btnRenew);
-            this.tabRenewals.Controls.Add(this.btnRefreshRenewals);
-            this.tabRenewals.Location = new System.Drawing.Point(4, 24);
-            this.tabRenewals.Name = "tabRenewals";
-            this.tabRenewals.Padding = new System.Windows.Forms.Padding(3);
-            this.tabRenewals.Size = new System.Drawing.Size(792, 572);
-            this.tabRenewals.TabIndex = 2;
-            this.tabRenewals.Text = "Renewals";
-            this.tabRenewals.UseVisualStyleBackColor = true;
-            //
-            // btnRefreshRenewals
-            //
-            this.btnRefreshRenewals.Location = new System.Drawing.Point(20, 16);
-            this.btnRefreshRenewals.Name = "btnRefreshRenewals";
-            this.btnRefreshRenewals.Size = new System.Drawing.Size(100, 26);
-            this.btnRefreshRenewals.TabIndex = 0;
-            this.btnRefreshRenewals.Text = "Refresh";
-            this.btnRefreshRenewals.UseVisualStyleBackColor = true;
-            //
-            // btnRenew
-            //
-            this.btnRenew.BackColor = System.Drawing.Color.FromArgb(21, 128, 61);
-            this.btnRenew.FlatAppearance.BorderSize = 0;
-            this.btnRenew.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnRenew.ForeColor = System.Drawing.Color.White;
-            this.btnRenew.Location = new System.Drawing.Point(130, 16);
-            this.btnRenew.Name = "btnRenew";
-            this.btnRenew.Size = new System.Drawing.Size(140, 26);
-            this.btnRenew.TabIndex = 1;
-            this.btnRenew.Text = "Renew Selected";
-            this.btnRenew.UseVisualStyleBackColor = false;
-            //
-            // lblRenewalsSummary
-            //
-            this.lblRenewalsSummary.AutoSize = true;
-            this.lblRenewalsSummary.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
-            this.lblRenewalsSummary.ForeColor = System.Drawing.Color.FromArgb(31, 41, 55);
-            this.lblRenewalsSummary.Location = new System.Drawing.Point(20, 55);
-            this.lblRenewalsSummary.Name = "lblRenewalsSummary";
-            this.lblRenewalsSummary.Size = new System.Drawing.Size(400, 19);
-            this.lblRenewalsSummary.TabIndex = 2;
-            this.lblRenewalsSummary.Text = "Members expiring in the next 30 days will appear here.";
-            //
+            // 
+            tabRenewals.Controls.Add(dgvRenewals);
+            tabRenewals.Controls.Add(lblRenewalsSummary);
+            tabRenewals.Controls.Add(btnRenew);
+            tabRenewals.Controls.Add(btnRefreshRenewals);
+            tabRenewals.Location = new Point(4, 34);
+            tabRenewals.Margin = new Padding(4, 5, 4, 5);
+            tabRenewals.Name = "tabRenewals";
+            tabRenewals.Padding = new Padding(4, 5, 4, 5);
+            tabRenewals.Size = new Size(1135, 962);
+            tabRenewals.TabIndex = 2;
+            tabRenewals.Text = "Renewals";
+            tabRenewals.UseVisualStyleBackColor = true;
+            // 
             // dgvRenewals
-            //
-            this.dgvRenewals.AllowUserToAddRows = false;
-            this.dgvRenewals.AllowUserToDeleteRows = false;
-            this.dgvRenewals.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.dgvRenewals.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dgvRenewals.Location = new System.Drawing.Point(20, 85);
-            this.dgvRenewals.Name = "dgvRenewals";
-            this.dgvRenewals.ReadOnly = true;
-            this.dgvRenewals.RowHeadersWidth = 51;
-            this.dgvRenewals.Size = new System.Drawing.Size(750, 470);
-            this.dgvRenewals.TabIndex = 3;
-            //
+            // 
+            dgvRenewals.AllowUserToAddRows = false;
+            dgvRenewals.AllowUserToDeleteRows = false;
+            dgvRenewals.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            dgvRenewals.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvRenewals.Location = new Point(29, 142);
+            dgvRenewals.Margin = new Padding(4, 5, 4, 5);
+            dgvRenewals.Name = "dgvRenewals";
+            dgvRenewals.ReadOnly = true;
+            dgvRenewals.RowHeadersWidth = 51;
+            dgvRenewals.Size = new Size(1071, 783);
+            dgvRenewals.TabIndex = 3;
+            // 
+            // lblRenewalsSummary
+            // 
+            lblRenewalsSummary.AutoSize = true;
+            lblRenewalsSummary.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            lblRenewalsSummary.ForeColor = Color.FromArgb(31, 41, 55);
+            lblRenewalsSummary.Location = new Point(29, 92);
+            lblRenewalsSummary.Margin = new Padding(4, 0, 4, 0);
+            lblRenewalsSummary.Name = "lblRenewalsSummary";
+            lblRenewalsSummary.Size = new Size(536, 28);
+            lblRenewalsSummary.TabIndex = 2;
+            lblRenewalsSummary.Text = "Members expiring in the next 30 days will appear here.";
+            // 
+            // btnRenew
+            // 
+            btnRenew.BackColor = Color.FromArgb(21, 128, 61);
+            btnRenew.FlatAppearance.BorderSize = 0;
+            btnRenew.FlatStyle = FlatStyle.Flat;
+            btnRenew.ForeColor = Color.White;
+            btnRenew.Location = new Point(186, 27);
+            btnRenew.Margin = new Padding(4, 5, 4, 5);
+            btnRenew.Name = "btnRenew";
+            btnRenew.Size = new Size(200, 43);
+            btnRenew.TabIndex = 1;
+            btnRenew.Text = "Renew Selected";
+            btnRenew.UseVisualStyleBackColor = false;
+            // 
+            // btnRefreshRenewals
+            // 
+            btnRefreshRenewals.Location = new Point(29, 27);
+            btnRefreshRenewals.Margin = new Padding(4, 5, 4, 5);
+            btnRefreshRenewals.Name = "btnRefreshRenewals";
+            btnRefreshRenewals.Size = new Size(143, 43);
+            btnRefreshRenewals.TabIndex = 0;
+            btnRefreshRenewals.Text = "Refresh";
+            btnRefreshRenewals.UseVisualStyleBackColor = true;
+            // 
             // tabLeads
-            //
-            this.tabLeads.Location = new System.Drawing.Point(4, 24);
-            this.tabLeads.Name = "tabLeads";
-            this.tabLeads.Padding = new System.Windows.Forms.Padding(3);
-            this.tabLeads.Size = new System.Drawing.Size(792, 572);
-            this.tabLeads.TabIndex = 3;
-            this.tabLeads.Text = "Leads";
-            this.tabLeads.UseVisualStyleBackColor = true;
-            //
+            // 
+            tabLeads.Location = new Point(4, 34);
+            tabLeads.Margin = new Padding(4, 5, 4, 5);
+            tabLeads.Name = "tabLeads";
+            tabLeads.Padding = new Padding(4, 5, 4, 5);
+            tabLeads.Size = new Size(1135, 962);
+            tabLeads.TabIndex = 3;
+            tabLeads.Text = "Leads";
+            tabLeads.UseVisualStyleBackColor = true;
+            // 
+            // tabCheckIn
+            // 
+            tabCheckIn.Location = new Point(4, 34);
+            tabCheckIn.Margin = new Padding(4, 5, 4, 5);
+            tabCheckIn.Name = "tabCheckIn";
+            tabCheckIn.Padding = new Padding(4, 5, 4, 5);
+            tabCheckIn.Size = new Size(1135, 962);
+            tabCheckIn.TabIndex = 4;
+            tabCheckIn.Text = "Check-In";
+            tabCheckIn.UseVisualStyleBackColor = true;
+            // 
+            // tabHistory
+            // 
+            tabHistory.Location = new Point(4, 34);
+            tabHistory.Margin = new Padding(4, 5, 4, 5);
+            tabHistory.Name = "tabHistory";
+            tabHistory.Padding = new Padding(4, 5, 4, 5);
+            tabHistory.Size = new Size(1135, 962);
+            tabHistory.TabIndex = 5;
+            tabHistory.Text = "Attendance History";
+            tabHistory.UseVisualStyleBackColor = true;
+            // 
             // SalesForceControl
-            //
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.tabControl);
-            this.Name = "SalesForceControl";
-            this.Size = new System.Drawing.Size(800, 600);
-            this.tabControl.ResumeLayout(false);
-            this.tabProcessSale.ResumeLayout(false);
-            this.tabProcessSale.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dgvRecentSales)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numAmount)).EndInit();
-            this.tabMemberships.ResumeLayout(false);
-            this.tabMemberships.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dgvMemberships)).EndInit();
-            this.tabRenewals.ResumeLayout(false);
-            this.tabRenewals.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dgvRenewals)).EndInit();
-            this.ResumeLayout(false);
+            // 
+            AutoScaleDimensions = new SizeF(10F, 25F);
+            AutoScaleMode = AutoScaleMode.Font;
+            Controls.Add(tabControl);
+            Margin = new Padding(4, 5, 4, 5);
+            Name = "SalesForceControl";
+            Size = new Size(1143, 1000);
+            tabControl.ResumeLayout(false);
+            tabProcessSale.ResumeLayout(false);
+            tabProcessSale.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)dgvRecentSales).EndInit();
+            ((System.ComponentModel.ISupportInitialize)numAmount).EndInit();
+            tabMemberships.ResumeLayout(false);
+            tabMemberships.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)dgvMemberships).EndInit();
+            tabRenewals.ResumeLayout(false);
+            tabRenewals.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)dgvRenewals).EndInit();
+            ResumeLayout(false);
         }
 
         private System.Windows.Forms.TabControl tabControl;
@@ -381,5 +427,7 @@ namespace CRM.winforms.Controls
         private System.Windows.Forms.Button btnRenew;
         private System.Windows.Forms.Button btnRefreshRenewals;
         private System.Windows.Forms.TabPage tabLeads;
+        private System.Windows.Forms.TabPage tabCheckIn;
+        private System.Windows.Forms.TabPage tabHistory;
     }
 }

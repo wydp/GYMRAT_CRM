@@ -22,6 +22,7 @@ namespace CRM.infrastructure.Data
         public DbSet<PromoCode> PromoCodes => Set<PromoCode>();
         public DbSet<RetentionAction> RetentionActions => Set<RetentionAction>();
         public DbSet<Lead> Leads => Set<Lead>();
+        public DbSet<Attendance> Attendances => Set<Attendance>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -181,6 +182,21 @@ namespace CRM.infrastructure.Data
                       .HasForeignKey(x => x.ConvertedCustomerId)
                       .OnDelete(DeleteBehavior.Restrict)
                       .IsRequired(false);
+            });
+
+            builder.Entity<Attendance>(entity =>
+            {
+                entity.HasKey(x => x.AttendanceId);
+                entity.Property(x => x.Notes).HasMaxLength(500);
+                entity.Property(x => x.IsActive).HasDefaultValue(true);
+
+                entity.HasOne(x => x.Customer)
+                      .WithMany()
+                      .HasForeignKey(x => x.CustomerId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                // Index for querying a customer's attendance history (most common query)
+                entity.HasIndex(x => new { x.CustomerId, x.CheckInTime });
             });
         }
     }

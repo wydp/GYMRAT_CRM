@@ -29,6 +29,12 @@ namespace CRM.winforms.Controls
             // Add the Leads tab content
             var leadControl = new LeadControl { Dock = DockStyle.Fill };
             tabLeads.Controls.Add(leadControl);
+
+            var checkInControl = new CheckInControl { Dock = DockStyle.Fill };
+            tabCheckIn.Controls.Add(checkInControl);
+
+            var historyControl = new AttendanceHistoryControl { Dock = DockStyle.Fill };
+            tabHistory.Controls.Add(historyControl);
         }
         private void StyleGrid()
         {

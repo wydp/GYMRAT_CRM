@@ -137,6 +137,51 @@ namespace CRM.winforms
         }
 
         // ==================================================================
+        // ATTENDANCE
+        // ==================================================================
+
+        public async Task<AttendanceDto?> CheckInMemberAsync(CheckInRequest request)
+        {
+            var response = await _http.PostAsJsonAsync(
+                $"/tenant/{CompanyId}/attendance/checkin", request, JsonOptions);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                throw new InvalidOperationException(await ExtractErrorMessageAsync(response, "Cannot check in."));
+
+            response.EnsureSuccessStatusCode();
+
+            // Response wraps attendance in an anonymous object; extract via JsonDocument
+            var doc = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonDocument>(JsonOptions);
+            var attendanceJson = doc?.RootElement.GetProperty("attendance").GetRawText();
+
+            if (string.IsNullOrEmpty(attendanceJson)) return null;
+            return System.Text.Json.JsonSerializer.Deserialize<AttendanceDto>(attendanceJson, JsonOptions);
+        }
+
+        public async Task CheckOutMemberAsync(int attendanceId)
+        {
+            var response = await _http.PostAsync(
+                $"/tenant/{CompanyId}/attendance/{attendanceId}/checkout", null);
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task<List<AttendanceDto>> GetTodayAttendanceAsync() =>
+            await _http.GetFromJsonAsync<List<AttendanceDto>>(
+                $"/tenant/{CompanyId}/attendance/today", JsonOptions) ?? new();
+
+        public async Task<List<AttendanceDto>> GetAttendanceHistoryAsync(int? customerId = null, DateTime? from = null, DateTime? to = null)
+        {
+            var query = new System.Collections.Generic.List<string>();
+            if (customerId.HasValue) query.Add($"customerId={customerId.Value}");
+            if (from.HasValue) query.Add($"from={from.Value:yyyy-MM-dd}");
+            if (to.HasValue) query.Add($"to={to.Value:yyyy-MM-dd}");
+
+            var queryString = query.Count > 0 ? "?" + string.Join("&", query) : "";
+            return await _http.GetFromJsonAsync<List<AttendanceDto>>(
+                $"/tenant/{CompanyId}/attendance{queryString}", JsonOptions) ?? new();
+        }
+
+        // ==================================================================
         // INQUIRIES
         // ==================================================================
 
@@ -639,6 +684,25 @@ namespace CRM.winforms
         {
             public string CustomerCode { get; set; } = string.Empty;
             public string? Address { get; set; }
+        }
+
+        public class AttendanceDto
+        {
+            public int AttendanceId { get; set; }
+            public int CustomerId { get; set; }
+            public int? BranchId { get; set; }
+            public DateTime CheckInTime { get; set; }
+            public DateTime? CheckOutTime { get; set; }
+            public string? Notes { get; set; }
+            public bool IsActive { get; set; }
+            public Customer? Customer { get; set; }
+        }
+
+        public class CheckInRequest
+        {
+            public int CustomerId { get; set; }
+            public int? BranchId { get; set; }
+            public string? Notes { get; set; }
         }
     }
 }
