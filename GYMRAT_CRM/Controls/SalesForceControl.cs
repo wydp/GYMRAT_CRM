@@ -25,6 +25,10 @@ namespace CRM.winforms.Controls
             StyleRenewalsGrid();          // ← add
             WireEvents();
             _ = LoadInitialDataAsync();
+
+            // Add the Leads tab content
+            var leadControl = new LeadControl { Dock = DockStyle.Fill };
+            tabLeads.Controls.Add(leadControl);
         }
         private void StyleGrid()
         {

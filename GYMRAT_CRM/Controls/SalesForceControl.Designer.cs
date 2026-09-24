@@ -31,6 +31,7 @@ namespace CRM.winforms.Controls
             this.lblCustomer = new System.Windows.Forms.Label();
             this.tabMemberships = new System.Windows.Forms.TabPage();
             this.tabRenewals = new System.Windows.Forms.TabPage();
+            this.tabLeads = new System.Windows.Forms.TabPage();
             this.dgvRenewals = new System.Windows.Forms.DataGridView();
             this.lblRenewalsSummary = new System.Windows.Forms.Label();
             this.btnRenew = new System.Windows.Forms.Button();
@@ -54,6 +55,7 @@ namespace CRM.winforms.Controls
             this.tabControl.Controls.Add(this.tabProcessSale);
             this.tabControl.Controls.Add(this.tabMemberships);
             this.tabControl.Controls.Add(this.tabRenewals);
+            this.tabControl.Controls.Add(this.tabLeads);
             this.tabControl.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabControl.Location = new System.Drawing.Point(0, 0);
             this.tabControl.Name = "tabControl";
@@ -323,6 +325,16 @@ namespace CRM.winforms.Controls
             this.dgvRenewals.Size = new System.Drawing.Size(750, 470);
             this.dgvRenewals.TabIndex = 3;
             //
+            // tabLeads
+            //
+            this.tabLeads.Location = new System.Drawing.Point(4, 24);
+            this.tabLeads.Name = "tabLeads";
+            this.tabLeads.Padding = new System.Windows.Forms.Padding(3);
+            this.tabLeads.Size = new System.Drawing.Size(792, 572);
+            this.tabLeads.TabIndex = 3;
+            this.tabLeads.Text = "Leads";
+            this.tabLeads.UseVisualStyleBackColor = true;
+            //
             // SalesForceControl
             //
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -368,5 +380,6 @@ namespace CRM.winforms.Controls
         private System.Windows.Forms.Label lblRenewalsSummary;
         private System.Windows.Forms.Button btnRenew;
         private System.Windows.Forms.Button btnRefreshRenewals;
+        private System.Windows.Forms.TabPage tabLeads;
     }
 }

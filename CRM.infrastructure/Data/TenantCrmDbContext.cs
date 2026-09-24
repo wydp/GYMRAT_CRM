@@ -21,6 +21,7 @@ namespace CRM.infrastructure.Data
         public DbSet<Promotion> Promotions => Set<Promotion>();
         public DbSet<PromoCode> PromoCodes => Set<PromoCode>();
         public DbSet<RetentionAction> RetentionActions => Set<RetentionAction>();
+        public DbSet<Lead> Leads => Set<Lead>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -159,6 +160,27 @@ namespace CRM.infrastructure.Data
                       .WithMany()
                       .HasForeignKey(x => x.CustomerId)
                       .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            builder.Entity<Lead>(entity =>
+            {
+                entity.HasKey(x => x.LeadId);
+                entity.Property(x => x.LeadCode).HasMaxLength(50).IsRequired();
+                entity.Property(x => x.FullName).HasMaxLength(200).IsRequired();
+                entity.Property(x => x.ContactNumber).HasMaxLength(50);
+                entity.Property(x => x.EmailAddress).HasMaxLength(200);
+                entity.Property(x => x.Address).HasMaxLength(500);
+                entity.Property(x => x.Notes).HasMaxLength(2000);
+                entity.Property(x => x.Source).HasConversion<string>().HasMaxLength(30);
+                entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
+                entity.HasIndex(x => x.LeadCode).IsUnique();
+                entity.Property(x => x.IsActive).HasDefaultValue(true);
+
+                entity.HasOne(x => x.ConvertedCustomer)
+                      .WithMany()
+                      .HasForeignKey(x => x.ConvertedCustomerId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
             });
         }
     }

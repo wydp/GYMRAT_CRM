@@ -304,6 +304,69 @@ namespace CRM.winforms
         }
 
         // ==================================================================
+        // LEADS
+        // ==================================================================
+
+        public async Task<List<LeadDto>> GetLeadsAsync() =>
+            await _http.GetFromJsonAsync<List<LeadDto>>(
+                $"/tenant/{CompanyId}/leads", JsonOptions) ?? new();
+
+        public async Task<LeadDto?> CreateLeadAsync(LeadDto lead)
+        {
+            var response = await _http.PostAsJsonAsync(
+                $"/tenant/{CompanyId}/leads", lead, JsonOptions);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                throw new InvalidOperationException("This Lead Code is already in use — please choose a different one.");
+
+            if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                throw new InvalidOperationException(await ExtractErrorMessageAsync(response, "Invalid lead data."));
+
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<LeadDto>(JsonOptions);
+        }
+
+        public async Task UpdateLeadAsync(int id, LeadDto lead)
+        {
+            var response = await _http.PutAsJsonAsync(
+                $"/tenant/{CompanyId}/leads/{id}", lead, JsonOptions);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                throw new InvalidOperationException("This Lead Code is already in use — please choose a different one.");
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task UpdateLeadStatusAsync(int id, string status)
+        {
+            var response = await _http.PutAsJsonAsync(
+                $"/tenant/{CompanyId}/leads/{id}/status",
+                new { status }, JsonOptions);
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task<LeadDto?> ConvertLeadAsync(int id, ConvertLeadRequest request)
+        {
+            var response = await _http.PostAsJsonAsync(
+                $"/tenant/{CompanyId}/leads/{id}/convert", request, JsonOptions);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                throw new InvalidOperationException(await ExtractErrorMessageAsync(response, "Cannot convert lead."));
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                throw new InvalidOperationException("A customer with this code already exists.");
+
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<LeadDto>(JsonOptions);
+        }
+
+        public async Task DeactivateLeadAsync(int id)
+        {
+            var response = await _http.DeleteAsync($"/tenant/{CompanyId}/leads/{id}");
+            response.EnsureSuccessStatusCode();
+        }
+
+        // ==================================================================
         // RETENTION
         // ==================================================================
 
@@ -552,6 +615,30 @@ namespace CRM.winforms
             public string? Notes { get; set; }
             public DateTime? FollowUpDate { get; set; }
             public string Outcome { get; set; } = "Pending";
+        }
+
+        public class LeadDto
+        {
+            public int LeadId { get; set; }
+            public string LeadCode { get; set; } = string.Empty;
+            public string FullName { get; set; } = string.Empty;
+            public string? ContactNumber { get; set; }
+            public string? EmailAddress { get; set; }
+            public string? Address { get; set; }
+            public string Source { get; set; } = string.Empty;
+            public string Status { get; set; } = string.Empty;
+            public string? Notes { get; set; }
+            public int? ConvertedCustomerId { get; set; }
+            public DateTime? ConvertedAt { get; set; }
+            public bool IsActive { get; set; }
+            public DateTime CreatedAt { get; set; }
+            public Customer? ConvertedCustomer { get; set; }
+        }
+
+        public class ConvertLeadRequest
+        {
+            public string CustomerCode { get; set; } = string.Empty;
+            public string? Address { get; set; }
         }
     }
 }
