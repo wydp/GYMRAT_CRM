@@ -20,6 +20,9 @@ namespace CRM.api.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(int companyId, [FromBody] Campaign campaign)
         {
+            if (!HasAnyAudience(campaign))
+                return BadRequest(new { message = "Select at least one target audience for this campaign." });
+
             await using var tenantDb = await _tenantFactory.CreateAsync(companyId);
             tenantDb.Campaigns.Add(campaign);
 
@@ -47,6 +50,9 @@ namespace CRM.api.Controllers
         [HttpPut("{campaignId:int}")]
         public async Task<IActionResult> Update(int companyId, int campaignId, [FromBody] Campaign updated)
         {
+            if (!HasAnyAudience(updated))
+                return BadRequest(new { message = "Select at least one target audience for this campaign." });
+
             await using var tenantDb = await _tenantFactory.CreateAsync(companyId);
             var existing = await tenantDb.Campaigns.FindAsync(campaignId);
             if (existing is null) return NotFound();
@@ -54,6 +60,12 @@ namespace CRM.api.Controllers
             existing.CampaignCode = updated.CampaignCode;
             existing.CampaignName = updated.CampaignName;
             existing.Description = updated.Description;
+            existing.Reason = updated.Reason;
+            existing.TargetAllMembers = updated.TargetAllMembers;
+            existing.TargetPWD = updated.TargetPWD;
+            existing.TargetSenior = updated.TargetSenior;
+            existing.TargetStudent = updated.TargetStudent;
+            existing.TargetCorporate = updated.TargetCorporate;
             existing.StartDate = updated.StartDate;
             existing.EndDate = updated.EndDate;
             existing.Status = updated.Status;
@@ -90,6 +102,15 @@ namespace CRM.api.Controllers
             existing.IsActive = false;
             await tenantDb.SaveChangesAsync();
             return Ok(existing);
+        }
+
+        private static bool HasAnyAudience(Campaign c)
+        {
+            return c.TargetAllMembers
+                || c.TargetPWD
+                || c.TargetSenior
+                || c.TargetStudent
+                || c.TargetCorporate;
         }
     }
 }

@@ -21,6 +21,14 @@ namespace CRM.winforms.Controls
             txtName = new TextBox();
             lblDescription = new Label();
             txtDescription = new TextBox();
+            lblReason = new Label();
+            txtReason = new TextBox();
+            lblAudience = new Label();
+            chkTargetAll = new CheckBox();
+            chkTargetPWD = new CheckBox();
+            chkTargetSenior = new CheckBox();
+            chkTargetStudent = new CheckBox();
+            chkTargetCorporate = new CheckBox();
             lblStart = new Label();
             dtpStart = new DateTimePicker();
             lblEnd = new Label();
@@ -72,6 +80,26 @@ namespace CRM.winforms.Controls
             txtName.Size = new Size(370, 31);
             txtName.TabIndex = 3;
             // 
+            // lblReason
+            // 
+            lblReason.AutoSize = true;
+            lblReason.Location = new Point(745, 33);
+            lblReason.Margin = new Padding(4, 0, 4, 0);
+            lblReason.Name = "lblReason";
+            lblReason.Size = new Size(176, 25);
+            lblReason.TabIndex = 4;
+            lblReason.Text = "Reason / Justification";
+            // 
+            // txtReason
+            // 
+            txtReason.Location = new Point(745, 67);
+            txtReason.Margin = new Padding(4, 5, 4, 5);
+            txtReason.Multiline = true;
+            txtReason.Name = "txtReason";
+            txtReason.ScrollBars = ScrollBars.Vertical;
+            txtReason.Size = new Size(370, 180);
+            txtReason.TabIndex = 5;
+            // 
             // lblDescription
             // 
             lblDescription.AutoSize = true;
@@ -79,7 +107,7 @@ namespace CRM.winforms.Controls
             lblDescription.Margin = new Padding(4, 0, 4, 0);
             lblDescription.Name = "lblDescription";
             lblDescription.Size = new Size(102, 25);
-            lblDescription.TabIndex = 4;
+            lblDescription.TabIndex = 6;
             lblDescription.Text = "Description";
             // 
             // txtDescription
@@ -89,75 +117,142 @@ namespace CRM.winforms.Controls
             txtDescription.Multiline = true;
             txtDescription.Name = "txtDescription";
             txtDescription.Size = new Size(684, 89);
-            txtDescription.TabIndex = 5;
+            txtDescription.TabIndex = 7;
+            // 
+            // lblAudience
+            // 
+            lblAudience.AutoSize = true;
+            lblAudience.Location = new Point(29, 275);
+            lblAudience.Margin = new Padding(4, 0, 4, 0);
+            lblAudience.Name = "lblAudience";
+            lblAudience.Size = new Size(100, 25);
+            lblAudience.TabIndex = 8;
+            lblAudience.Text = "Audience";
+            // 
+            // chkTargetAll
+            // 
+            chkTargetAll.AutoSize = true;
+            chkTargetAll.Checked = true;
+            chkTargetAll.CheckState = CheckState.Checked;
+            chkTargetAll.Location = new Point(150, 273);
+            chkTargetAll.Margin = new Padding(4, 5, 4, 5);
+            chkTargetAll.Name = "chkTargetAll";
+            chkTargetAll.Size = new Size(146, 29);
+            chkTargetAll.TabIndex = 9;
+            chkTargetAll.Text = "All Members";
+            chkTargetAll.UseVisualStyleBackColor = true;
+            // 
+            // chkTargetPWD
+            // 
+            chkTargetPWD.AutoSize = true;
+            chkTargetPWD.Location = new Point(310, 273);
+            chkTargetPWD.Margin = new Padding(4, 5, 4, 5);
+            chkTargetPWD.Name = "chkTargetPWD";
+            chkTargetPWD.Size = new Size(79, 29);
+            chkTargetPWD.TabIndex = 10;
+            chkTargetPWD.Text = "PWD";
+            chkTargetPWD.UseVisualStyleBackColor = true;
+            // 
+            // chkTargetSenior
+            // 
+            chkTargetSenior.AutoSize = true;
+            chkTargetSenior.Location = new Point(400, 273);
+            chkTargetSenior.Margin = new Padding(4, 5, 4, 5);
+            chkTargetSenior.Name = "chkTargetSenior";
+            chkTargetSenior.Size = new Size(94, 29);
+            chkTargetSenior.TabIndex = 11;
+            chkTargetSenior.Text = "Senior";
+            chkTargetSenior.UseVisualStyleBackColor = true;
+            // 
+            // chkTargetStudent
+            // 
+            chkTargetStudent.AutoSize = true;
+            chkTargetStudent.Location = new Point(505, 273);
+            chkTargetStudent.Margin = new Padding(4, 5, 4, 5);
+            chkTargetStudent.Name = "chkTargetStudent";
+            chkTargetStudent.Size = new Size(106, 29);
+            chkTargetStudent.TabIndex = 12;
+            chkTargetStudent.Text = "Student";
+            chkTargetStudent.UseVisualStyleBackColor = true;
+            // 
+            // chkTargetCorporate
+            // 
+            chkTargetCorporate.AutoSize = true;
+            chkTargetCorporate.Location = new Point(625, 273);
+            chkTargetCorporate.Margin = new Padding(4, 5, 4, 5);
+            chkTargetCorporate.Name = "chkTargetCorporate";
+            chkTargetCorporate.Size = new Size(127, 29);
+            chkTargetCorporate.TabIndex = 13;
+            chkTargetCorporate.Text = "Corporate";
+            chkTargetCorporate.UseVisualStyleBackColor = true;
             // 
             // lblStart
             // 
             lblStart.AutoSize = true;
-            lblStart.Location = new Point(29, 275);
+            lblStart.Location = new Point(29, 325);
             lblStart.Margin = new Padding(4, 0, 4, 0);
             lblStart.Name = "lblStart";
             lblStart.Size = new Size(90, 25);
-            lblStart.TabIndex = 6;
+            lblStart.TabIndex = 14;
             lblStart.Text = "Start Date";
             // 
             // dtpStart
             // 
             dtpStart.Format = DateTimePickerFormat.Short;
-            dtpStart.Location = new Point(29, 308);
+            dtpStart.Location = new Point(29, 358);
             dtpStart.Margin = new Padding(4, 5, 4, 5);
             dtpStart.Name = "dtpStart";
             dtpStart.Size = new Size(198, 31);
-            dtpStart.TabIndex = 7;
+            dtpStart.TabIndex = 15;
             // 
             // lblEnd
             // 
             lblEnd.AutoSize = true;
-            lblEnd.Location = new Point(257, 275);
+            lblEnd.Location = new Point(257, 325);
             lblEnd.Margin = new Padding(4, 0, 4, 0);
             lblEnd.Name = "lblEnd";
             lblEnd.Size = new Size(84, 25);
-            lblEnd.TabIndex = 8;
+            lblEnd.TabIndex = 16;
             lblEnd.Text = "End Date";
             // 
             // dtpEnd
             // 
             dtpEnd.Format = DateTimePickerFormat.Short;
-            dtpEnd.Location = new Point(257, 308);
+            dtpEnd.Location = new Point(257, 358);
             dtpEnd.Margin = new Padding(4, 5, 4, 5);
             dtpEnd.Name = "dtpEnd";
             dtpEnd.Size = new Size(198, 31);
-            dtpEnd.TabIndex = 9;
+            dtpEnd.TabIndex = 17;
             // 
             // lblStatus
             // 
             lblStatus.AutoSize = true;
-            lblStatus.Location = new Point(486, 275);
+            lblStatus.Location = new Point(486, 325);
             lblStatus.Margin = new Padding(4, 0, 4, 0);
             lblStatus.Name = "lblStatus";
             lblStatus.Size = new Size(60, 25);
-            lblStatus.TabIndex = 10;
+            lblStatus.TabIndex = 18;
             lblStatus.Text = "Status";
             // 
             // cmbStatus
             // 
             cmbStatus.DropDownStyle = ComboBoxStyle.DropDownList;
-            cmbStatus.Location = new Point(486, 308);
+            cmbStatus.Location = new Point(486, 358);
             cmbStatus.Margin = new Padding(4, 5, 4, 5);
             cmbStatus.Name = "cmbStatus";
             cmbStatus.Size = new Size(227, 33);
-            cmbStatus.TabIndex = 11;
+            cmbStatus.TabIndex = 19;
             // 
             // chkActive
             // 
             chkActive.AutoSize = true;
             chkActive.Checked = true;
             chkActive.CheckState = CheckState.Checked;
-            chkActive.Location = new Point(29, 375);
+            chkActive.Location = new Point(745, 358);
             chkActive.Margin = new Padding(4, 5, 4, 5);
             chkActive.Name = "chkActive";
             chkActive.Size = new Size(86, 29);
-            chkActive.TabIndex = 12;
+            chkActive.TabIndex = 20;
             chkActive.Text = "Active";
             chkActive.UseVisualStyleBackColor = true;
             // 
@@ -167,7 +262,7 @@ namespace CRM.winforms.Controls
             btnAdd.Margin = new Padding(4, 5, 4, 5);
             btnAdd.Name = "btnAdd";
             btnAdd.Size = new Size(143, 53);
-            btnAdd.TabIndex = 13;
+            btnAdd.TabIndex = 21;
             btnAdd.Text = "Add";
             btnAdd.UseVisualStyleBackColor = true;
             // 
@@ -177,7 +272,7 @@ namespace CRM.winforms.Controls
             btnUpdate.Margin = new Padding(4, 5, 4, 5);
             btnUpdate.Name = "btnUpdate";
             btnUpdate.Size = new Size(143, 53);
-            btnUpdate.TabIndex = 14;
+            btnUpdate.TabIndex = 22;
             btnUpdate.Text = "Update";
             btnUpdate.UseVisualStyleBackColor = true;
             // 
@@ -187,7 +282,7 @@ namespace CRM.winforms.Controls
             btnDeactivate.Margin = new Padding(4, 5, 4, 5);
             btnDeactivate.Name = "btnDeactivate";
             btnDeactivate.Size = new Size(143, 53);
-            btnDeactivate.TabIndex = 15;
+            btnDeactivate.TabIndex = 23;
             btnDeactivate.Text = "Deactivate";
             btnDeactivate.UseVisualStyleBackColor = true;
             // 
@@ -197,7 +292,7 @@ namespace CRM.winforms.Controls
             btnRefresh.Margin = new Padding(4, 5, 4, 5);
             btnRefresh.Name = "btnRefresh";
             btnRefresh.Size = new Size(143, 53);
-            btnRefresh.TabIndex = 16;
+            btnRefresh.TabIndex = 24;
             btnRefresh.Text = "Refresh";
             btnRefresh.UseVisualStyleBackColor = true;
             // 
@@ -213,7 +308,7 @@ namespace CRM.winforms.Controls
             dgvCampaigns.ReadOnly = true;
             dgvCampaigns.RowHeadersWidth = 51;
             dgvCampaigns.Size = new Size(1086, 433);
-            dgvCampaigns.TabIndex = 17;
+            dgvCampaigns.TabIndex = 25;
             // 
             // CampaignControl
             // 
@@ -231,8 +326,16 @@ namespace CRM.winforms.Controls
             Controls.Add(lblEnd);
             Controls.Add(dtpStart);
             Controls.Add(lblStart);
+            Controls.Add(chkTargetCorporate);
+            Controls.Add(chkTargetStudent);
+            Controls.Add(chkTargetSenior);
+            Controls.Add(chkTargetPWD);
+            Controls.Add(chkTargetAll);
+            Controls.Add(lblAudience);
             Controls.Add(txtDescription);
             Controls.Add(lblDescription);
+            Controls.Add(txtReason);
+            Controls.Add(lblReason);
             Controls.Add(txtName);
             Controls.Add(lblName);
             Controls.Add(txtCode);
@@ -251,6 +354,14 @@ namespace CRM.winforms.Controls
         private System.Windows.Forms.TextBox txtName;
         private System.Windows.Forms.Label lblDescription;
         private System.Windows.Forms.TextBox txtDescription;
+        private System.Windows.Forms.Label lblReason;
+        private System.Windows.Forms.TextBox txtReason;
+        private System.Windows.Forms.Label lblAudience;
+        private System.Windows.Forms.CheckBox chkTargetAll;
+        private System.Windows.Forms.CheckBox chkTargetPWD;
+        private System.Windows.Forms.CheckBox chkTargetSenior;
+        private System.Windows.Forms.CheckBox chkTargetStudent;
+        private System.Windows.Forms.CheckBox chkTargetCorporate;
         private System.Windows.Forms.Label lblStart;
         private System.Windows.Forms.DateTimePicker dtpStart;
         private System.Windows.Forms.Label lblEnd;

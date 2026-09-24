@@ -9,7 +9,7 @@ namespace CRM.winforms.Controls
     public partial class CampaignControl : UserControl
     {
         private readonly ApiClient _api = new ApiClient();
-        private int? _selectedCampaignId = null; // null = "Add" mode, set = "Update/Deactivate" mode
+        private int? _selectedCampaignId = null;
 
         public CampaignControl()
         {
@@ -17,6 +17,7 @@ namespace CRM.winforms.Controls
             PopulateStatusCombo();
             StyleGrid();
             WireEvents();
+            WireAudienceCheckboxes();
             _ = LoadCampaignsAsync();
         }
 
@@ -24,6 +25,33 @@ namespace CRM.winforms.Controls
         {
             cmbStatus.DataSource = Enum.GetValues(typeof(CampaignStatus));
             cmbStatus.SelectedIndex = 0;
+        }
+
+        // "All Members" and specific audiences are mutually exclusive.
+        private void WireAudienceCheckboxes()
+        {
+            chkTargetAll.CheckedChanged += (s, e) =>
+            {
+                if (!chkTargetAll.Checked) return;
+                chkTargetPWD.Checked = false;
+                chkTargetSenior.Checked = false;
+                chkTargetStudent.Checked = false;
+                chkTargetCorporate.Checked = false;
+            };
+
+            void UncheckAllIfSpecific(CheckBox cb)
+            {
+                cb.CheckedChanged += (s, e) =>
+                {
+                    if (!cb.Checked) return;
+                    chkTargetAll.Checked = false;
+                };
+            }
+
+            UncheckAllIfSpecific(chkTargetPWD);
+            UncheckAllIfSpecific(chkTargetSenior);
+            UncheckAllIfSpecific(chkTargetStudent);
+            UncheckAllIfSpecific(chkTargetCorporate);
         }
 
         private void StyleGrid()
@@ -54,6 +82,7 @@ namespace CRM.winforms.Controls
             dgvCampaigns.Columns.Add("CampaignCode", "Code");
             dgvCampaigns.Columns.Add("CampaignName", "Name");
             dgvCampaigns.Columns.Add("Description", "Description");
+            dgvCampaigns.Columns.Add("Audience", "Audience");
             dgvCampaigns.Columns.Add("StartDate", "Start");
             dgvCampaigns.Columns.Add("EndDate", "End");
             dgvCampaigns.Columns.Add("Status", "Status");
@@ -78,30 +107,27 @@ namespace CRM.winforms.Controls
 
                 foreach (var c in campaigns.OrderBy(x => x.CampaignId))
                 {
-                    // Build row and set Tag BEFORE Add — Rows.Add fires
-                    // SelectionChanged synchronously for the first row.
                     var row = new DataGridViewRow();
                     row.CreateCells(dgvCampaigns,
                         c.CampaignCode,
                         c.CampaignName,
                         c.Description,
+                        FormatAudience(c),
                         c.StartDate.ToString("yyyy-MM-dd"),
                         c.EndDate.ToString("yyyy-MM-dd"),
                         c.Status.ToString(),
                         c.IsActive ? "Active" : "Inactive");
-                    row.Tag = c.CampaignId;
+                    row.Tag = c;
 
                     int rowIndex = dgvCampaigns.Rows.Add(row);
 
-                    // Status color: Active=green, Completed=blue, Cancelled=red,
-                    // Planned=amber. Uses AccentColors values directly.
                     var statusCell = dgvCampaigns.Rows[rowIndex].Cells["Status"];
                     statusCell.Style.ForeColor = c.Status switch
                     {
-                        CampaignStatus.Active => Color.FromArgb(21, 128, 61),   // green
-                        CampaignStatus.Completed => Color.FromArgb(72, 128, 255), // blue
-                        CampaignStatus.Cancelled => Color.FromArgb(185, 28, 28), // red
-                        _ => Color.FromArgb(180, 83, 9),                         // amber (Planned)
+                        CampaignStatus.Active => Color.FromArgb(21, 128, 61),
+                        CampaignStatus.Completed => Color.FromArgb(72, 128, 255),
+                        CampaignStatus.Cancelled => Color.FromArgb(185, 28, 28),
+                        _ => Color.FromArgb(180, 83, 9),
                     };
 
                     dgvCampaigns.Rows[rowIndex].Cells["Active"].Style.ForeColor =
@@ -115,27 +141,40 @@ namespace CRM.winforms.Controls
             }
         }
 
+        private static string FormatAudience(Campaign c)
+        {
+            var parts = new System.Collections.Generic.List<string>();
+            if (c.TargetAllMembers) parts.Add("All Members");
+            if (c.TargetPWD) parts.Add("PWD");
+            if (c.TargetSenior) parts.Add("Senior");
+            if (c.TargetStudent) parts.Add("Student");
+            if (c.TargetCorporate) parts.Add("Corporate");
+            return parts.Count == 0 ? "—" : string.Join(", ", parts);
+        }
+
         private void DgvCampaigns_SelectionChanged(object? sender, EventArgs e)
         {
             if (dgvCampaigns.SelectedRows.Count == 0) return;
 
             var row = dgvCampaigns.SelectedRows[0];
-            if (row.Tag is not int campaignId) return;
-            _selectedCampaignId = campaignId;
+            if (row.Tag is not Campaign c) return;
+            _selectedCampaignId = c.CampaignId;
 
-            txtCode.Text = row.Cells["CampaignCode"].Value?.ToString();
-            txtName.Text = row.Cells["CampaignName"].Value?.ToString();
-            txtDescription.Text = row.Cells["Description"].Value?.ToString();
+            txtCode.Text = c.CampaignCode;
+            txtName.Text = c.CampaignName;
+            txtDescription.Text = c.Description;
+            txtReason.Text = c.Reason ?? string.Empty;
 
-            if (DateTime.TryParse(row.Cells["StartDate"].Value?.ToString(), out var start))
-                dtpStart.Value = start;
-            if (DateTime.TryParse(row.Cells["EndDate"].Value?.ToString(), out var end))
-                dtpEnd.Value = end;
+            chkTargetAll.Checked = c.TargetAllMembers;
+            chkTargetPWD.Checked = c.TargetPWD;
+            chkTargetSenior.Checked = c.TargetSenior;
+            chkTargetStudent.Checked = c.TargetStudent;
+            chkTargetCorporate.Checked = c.TargetCorporate;
 
-            if (Enum.TryParse<CampaignStatus>(row.Cells["Status"].Value?.ToString(), out var status))
-                cmbStatus.SelectedItem = status;
-
-            chkActive.Checked = row.Cells["Active"].Value?.ToString() == "Active";
+            dtpStart.Value = c.StartDate;
+            dtpEnd.Value = c.EndDate;
+            cmbStatus.SelectedItem = c.Status;
+            chkActive.Checked = c.IsActive;
         }
 
         private async System.Threading.Tasks.Task AddCampaignAsync()
@@ -211,6 +250,12 @@ namespace CRM.winforms.Controls
             CampaignCode = txtCode.Text.Trim(),
             CampaignName = txtName.Text.Trim(),
             Description = txtDescription.Text.Trim(),
+            Reason = string.IsNullOrWhiteSpace(txtReason.Text) ? null : txtReason.Text.Trim(),
+            TargetAllMembers = chkTargetAll.Checked,
+            TargetPWD = chkTargetPWD.Checked,
+            TargetSenior = chkTargetSenior.Checked,
+            TargetStudent = chkTargetStudent.Checked,
+            TargetCorporate = chkTargetCorporate.Checked,
             StartDate = dtpStart.Value,
             EndDate = dtpEnd.Value,
             Status = (CampaignStatus)cmbStatus.SelectedItem!,
@@ -222,6 +267,21 @@ namespace CRM.winforms.Controls
             if (string.IsNullOrWhiteSpace(txtCode.Text) || string.IsNullOrWhiteSpace(txtName.Text))
             {
                 MessageBox.Show("Campaign Code and Campaign Name are required.", "Missing Fields",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(txtReason.Text))
+            {
+                MessageBox.Show("Please provide a reason/justification for this campaign.", "Missing Reason",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            if (!chkTargetAll.Checked && !chkTargetPWD.Checked && !chkTargetSenior.Checked
+                && !chkTargetStudent.Checked && !chkTargetCorporate.Checked)
+            {
+                MessageBox.Show("Select at least one target audience.", "Missing Audience",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;
             }
@@ -242,6 +302,12 @@ namespace CRM.winforms.Controls
             txtCode.Clear();
             txtName.Clear();
             txtDescription.Clear();
+            txtReason.Clear();
+            chkTargetAll.Checked = true;
+            chkTargetPWD.Checked = false;
+            chkTargetSenior.Checked = false;
+            chkTargetStudent.Checked = false;
+            chkTargetCorporate.Checked = false;
             dtpStart.Value = DateTime.Today;
             dtpEnd.Value = DateTime.Today;
             cmbStatus.SelectedIndex = 0;

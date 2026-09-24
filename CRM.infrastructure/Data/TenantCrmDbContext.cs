@@ -114,6 +114,7 @@ namespace CRM.infrastructure.Data
                 entity.Property(x => x.CampaignCode).HasMaxLength(50).IsRequired();
                 entity.Property(x => x.CampaignName).HasMaxLength(200).IsRequired();
                 entity.Property(x => x.Description).HasMaxLength(2000);
+                entity.Property(x => x.Reason).HasMaxLength(1000);
                 entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
                 entity.HasIndex(x => x.CampaignCode).IsUnique();
                 entity.Property(x => x.IsActive).HasDefaultValue(true);
@@ -125,6 +126,7 @@ namespace CRM.infrastructure.Data
                 entity.Property(x => x.PromotionCode).HasMaxLength(50).IsRequired();
                 entity.Property(x => x.PromotionName).HasMaxLength(200).IsRequired();
                 entity.Property(x => x.Description).HasMaxLength(2000);
+                entity.Property(x => x.Reason).HasMaxLength(1000);
                 entity.Property(x => x.DiscountType).HasConversion<string>().HasMaxLength(20);
                 entity.Property(x => x.DiscountValue).HasPrecision(18, 2);
                 entity.HasIndex(x => x.PromotionCode).IsUnique();
