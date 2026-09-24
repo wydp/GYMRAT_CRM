@@ -226,6 +226,7 @@ namespace CRM.winforms
                 "Marketing Automation" => new MarketingAutomationControl { Dock = DockStyle.Fill },
                 "Sales Force Automation" => new SalesForceControl { Dock = DockStyle.Fill },
                 "Staff Management" => new StaffManagementControl { Dock = DockStyle.Fill },
+                "Retention" => new RetentionControl { Dock = DockStyle.Fill },
                 _ => null,
             };
 
