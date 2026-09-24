@@ -1,18 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace CRM.domain.Entities
+﻿public class Customer
 {
-    public class Customer
-    {
-        public int CustomerId { get; set; }
-        public string CustomerCode { get; set; } = string.Empty;
-        public string CustomerName { get; set; } = string.Empty;
-        public string? ContactNumber { get; set; }
-        public string? EmailAddress { get; set; }
-        public string? Address { get; set; }
-        public bool IsActive { get; set; } = true;
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    }
+    public int CustomerId { get; set; }
+    public string CustomerCode { get; set; } = string.Empty;
+    public string CustomerName { get; set; } = string.Empty;
+    public string? ContactNumber { get; set; }
+    public string? EmailAddress { get; set; }
+    public string? Address { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    // Retention — membership freeze
+    public bool IsFrozen { get; set; } = false;
+    public DateTime? FrozenUntil { get; set; }
 }

@@ -20,6 +20,7 @@ namespace CRM.infrastructure.Data
         public DbSet<Campaign> Campaigns => Set<Campaign>();
         public DbSet<Promotion> Promotions => Set<Promotion>();
         public DbSet<PromoCode> PromoCodes => Set<PromoCode>();
+        public DbSet<RetentionAction> RetentionActions => Set<RetentionAction>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -144,6 +145,19 @@ namespace CRM.infrastructure.Data
                 entity.HasOne(x => x.Promotion)
                       .WithMany()
                       .HasForeignKey(x => x.PromotionId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            builder.Entity<RetentionAction>(entity =>
+            {
+                entity.HasKey(x => x.RetentionActionId);
+                entity.Property(x => x.Notes).HasMaxLength(2000);
+                entity.Property(x => x.ActionType).HasConversion<string>().HasMaxLength(30);
+                entity.Property(x => x.Outcome).HasConversion<string>().HasMaxLength(20);
+
+                entity.HasOne(x => x.Customer)
+                      .WithMany()
+                      .HasForeignKey(x => x.CustomerId)
                       .OnDelete(DeleteBehavior.Restrict);
             });
         }
