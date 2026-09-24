@@ -329,6 +329,46 @@ namespace CRM.winforms
             return await response.Content.ReadFromJsonAsync<LoginResult>(JsonOptions);
         }
 
+        // ============================================================
+        // ===================== PROMO CODES =============================
+        // ============================================================
+
+        public async Task<List<PromoCodeDto>> GetPromoCodesAsync() =>
+            await _http.GetFromJsonAsync<List<PromoCodeDto>>($"/tenant/{CompanyId}/promocodes", JsonOptions) ?? new();
+
+        public async Task<PromoCodeDto?> CreatePromoCodeAsync(PromoCodeDto promoCode)
+        {
+            var response = await _http.PostAsJsonAsync($"/tenant/{CompanyId}/promocodes", promoCode, JsonOptions);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                throw new System.InvalidOperationException("This promo code already exists.");
+
+            if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                throw new System.InvalidOperationException(await ExtractErrorMessageAsync(response, "Invalid promo code data."));
+
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<PromoCodeDto>(JsonOptions);
+        }
+
+        public async Task DeactivatePromoCodeAsync(int id)
+        {
+            var response = await _http.DeleteAsync($"/tenant/{CompanyId}/promocodes/{id}");
+            response.EnsureSuccessStatusCode();
+        }
+
+        public class PromoCodeDto
+        {
+            public int PromoCodeId { get; set; }
+            public string Code { get; set; } = string.Empty;
+            public int PromotionId { get; set; }
+            public int? MaxUses { get; set; }
+            public int CurrentUses { get; set; }
+            public DateTime? ExpiresAt { get; set; }
+            public bool IsActive { get; set; }
+            public DateTime CreatedAt { get; set; }
+            public CRM.domain.Entities.Promotion? Promotion { get; set; }
+        }
+
         // ---- Staff Management ----
 
         public class StaffDto

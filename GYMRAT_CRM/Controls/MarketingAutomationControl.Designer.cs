@@ -18,6 +18,7 @@ namespace CRM.winforms.Controls
             this.tabControl = new System.Windows.Forms.TabControl();
             this.tabCampaigns = new System.Windows.Forms.TabPage();
             this.tabPromotions = new System.Windows.Forms.TabPage();
+            this.tabPromoCodes = new System.Windows.Forms.TabPage();
             this.tabControl.SuspendLayout();
             this.SuspendLayout();
             //
@@ -25,6 +26,7 @@ namespace CRM.winforms.Controls
             //
             this.tabControl.Controls.Add(this.tabCampaigns);
             this.tabControl.Controls.Add(this.tabPromotions);
+            this.tabControl.Controls.Add(this.tabPromoCodes);
             this.tabControl.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabControl.Location = new System.Drawing.Point(0, 0);
             this.tabControl.Name = "tabControl";
@@ -52,6 +54,16 @@ namespace CRM.winforms.Controls
             this.tabPromotions.Text = "Promotions && Discounts";
             this.tabPromotions.UseVisualStyleBackColor = true;
             //
+            // tabPromoCodes
+            //
+            this.tabPromoCodes.Location = new System.Drawing.Point(4, 24);
+            this.tabPromoCodes.Name = "tabPromoCodes";
+            this.tabPromoCodes.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPromoCodes.Size = new System.Drawing.Size(792, 572);
+            this.tabPromoCodes.TabIndex = 2;
+            this.tabPromoCodes.Text = "Promo Codes";
+            this.tabPromoCodes.UseVisualStyleBackColor = true;
+            //
             // MarketingAutomationControl
             //
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -66,5 +78,6 @@ namespace CRM.winforms.Controls
         private System.Windows.Forms.TabControl tabControl;
         private System.Windows.Forms.TabPage tabCampaigns;
         private System.Windows.Forms.TabPage tabPromotions;
+        private System.Windows.Forms.TabPage tabPromoCodes;
     }
 }

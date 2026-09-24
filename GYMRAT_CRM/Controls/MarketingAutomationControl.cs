@@ -13,6 +13,9 @@ namespace CRM.winforms.Controls
 
             var promotionControl = new PromotionControl { Dock = DockStyle.Fill };
             tabPromotions.Controls.Add(promotionControl);
+
+            var promoCodeControl = new PromoCodeControl { Dock = DockStyle.Fill };
+            tabPromoCodes.Controls.Add(promoCodeControl);
         }
     }
 }

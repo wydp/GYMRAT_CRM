@@ -19,6 +19,7 @@ namespace CRM.infrastructure.Data
         public DbSet<MembershipSale> MembershipSales => Set<MembershipSale>();
         public DbSet<Campaign> Campaigns => Set<Campaign>();
         public DbSet<Promotion> Promotions => Set<Promotion>();
+        public DbSet<PromoCode> PromoCodes => Set<PromoCode>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -133,7 +134,18 @@ namespace CRM.infrastructure.Data
                 entity.Property(x => x.IsActive).HasDefaultValue(true);
             });
 
+            builder.Entity<PromoCode>(entity =>
+            {
+                entity.HasKey(x => x.PromoCodeId);
+                entity.Property(x => x.Code).HasMaxLength(50).IsRequired();
+                entity.HasIndex(x => x.Code).IsUnique();
+                entity.Property(x => x.IsActive).HasDefaultValue(true);
 
+                entity.HasOne(x => x.Promotion)
+                      .WithMany()
+                      .HasForeignKey(x => x.PromotionId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
         }
     }
 }
