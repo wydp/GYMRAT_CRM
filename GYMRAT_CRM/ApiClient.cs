@@ -513,6 +513,36 @@ namespace CRM.winforms
                 JsonOptions);
         }
 
+        public async Task<LeadConversionReportDto?> GetLeadConversionReportAsync(DateTime from, DateTime to)
+        {
+            var fromStr = from.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            var toStr = to.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+
+            return await _http.GetFromJsonAsync<LeadConversionReportDto>(
+                $"/tenant/{CompanyId}/reports/lead-conversion?from={fromStr}&to={toStr}",
+                JsonOptions);
+        }
+
+        public async Task<RetentionReportDto?> GetRetentionReportAsync(DateTime from, DateTime to)
+        {
+            var fromStr = from.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            var toStr = to.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+
+            return await _http.GetFromJsonAsync<RetentionReportDto>(
+                $"/tenant/{CompanyId}/reports/retention?from={fromStr}&to={toStr}",
+                JsonOptions);
+        }
+
+        public async Task<PromoUsageReportDto?> GetPromoUsageReportAsync(DateTime from, DateTime to)
+        {
+            var fromStr = from.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            var toStr = to.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+
+            return await _http.GetFromJsonAsync<PromoUsageReportDto>(
+                $"/tenant/{CompanyId}/reports/promo-usage?from={fromStr}&to={toStr}",
+                JsonOptions);
+        }
+
         // ==================================================================
         // STAFF MANAGEMENT
         // ==================================================================
@@ -853,6 +883,97 @@ namespace CRM.winforms
             public DateTime CheckInTime { get; set; }
             public DateTime? CheckOutTime { get; set; }
             public string? Notes { get; set; }
+        }
+
+        // =====================
+        // Lead Conversion DTOs
+        // =====================
+        public class LeadConversionReportDto
+        {
+            public int Total { get; set; }
+            public int Converted { get; set; }
+            public int Lost { get; set; }
+            public decimal ConversionRate { get; set; }
+            public List<SimpleCount> BySource { get; set; } = new();
+            public List<SimpleCount> StatusDistribution { get; set; } = new();
+            public List<LeadRow> Leads { get; set; } = new();
+        }
+
+        public class SimpleCount
+        {
+            public string Name { get; set; } = string.Empty;
+            public int Count { get; set; }
+        }
+
+        public class LeadRow
+        {
+            public int LeadId { get; set; }
+            public string FullName { get; set; } = string.Empty;
+            public string Status { get; set; } = string.Empty;
+            public string Source { get; set; } = string.Empty;
+            public DateTime CreatedAt { get; set; }
+            public DateTime? ConvertedAt { get; set; }
+            public string? ConvertedCustomerName { get; set; }
+        }
+
+        // =====================
+        // Retention DTOs
+        // =====================
+        public class RetentionReportDto
+        {
+            public int Cancellations { get; set; }
+            public int Freezes { get; set; }
+            public int WinBacks { get; set; }
+            public int Renewals { get; set; }
+            public List<ByDay> ByDay { get; set; } = new();
+            public List<SimpleCount> ByAction { get; set; } = new();
+            public List<RetentionActionRow> Actions { get; set; } = new();
+        }
+
+        public class ByDay
+        {
+            public string Date { get; set; } = string.Empty;
+            public int Count { get; set; }
+        }
+
+        public class RetentionActionRow
+        {
+            public int RetentionActionId { get; set; }
+            public int CustomerId { get; set; }
+            public string? CustomerName { get; set; }
+            public string ActionType { get; set; } = string.Empty;
+            public string Outcome { get; set; } = string.Empty;
+            public DateTime Timestamp { get; set; }
+            public string? Notes { get; set; }
+        }
+
+        // =====================
+        // Promo Usage DTOs
+        // =====================
+        public class PromoUsageReportDto
+        {
+            public int TotalCodes { get; set; }
+            public int ActiveCodes { get; set; }
+            public int TotalRedemptions { get; set; }
+            public decimal AvgRate { get; set; }
+            public List<PromoByCode> ByCode { get; set; } = new();
+            public List<PromoCodeRow> PromoCodes { get; set; } = new();
+        }
+
+        public class PromoByCode
+        {
+            public string Code { get; set; } = string.Empty;
+            public int Redemptions { get; set; }
+        }
+
+        public class PromoCodeRow
+        {
+            public int PromoCodeId { get; set; }
+            public string Code { get; set; } = string.Empty;
+            public int CurrentUses { get; set; }
+            public int? MaxUses { get; set; }
+            public DateTime? ExpiresAt { get; set; }
+            public string? PromotionName { get; set; }
         }
     }
 }

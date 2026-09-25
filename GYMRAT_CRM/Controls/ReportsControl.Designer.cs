@@ -73,6 +73,32 @@ namespace CRM.winforms.Controls
             this.chartAttendanceByDay = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.chartAttendanceByHour = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.dgvAttendanceReport = new System.Windows.Forms.DataGridView();
+            // Lead Conversion controls
+            this.kpiLeadTotal = new CRM.winforms.Controls.KpiCard();
+            this.kpiLeadConverted = new CRM.winforms.Controls.KpiCard();
+            this.kpiLeadLost = new CRM.winforms.Controls.KpiCard();
+            this.kpiLeadRate = new CRM.winforms.Controls.KpiCard();
+            this.chartLeadBySource = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            this.chartLeadByStatus = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            this.dgvLeadReport = new System.Windows.Forms.DataGridView();
+
+            // Retention controls
+            this.kpiRetCancellations = new CRM.winforms.Controls.KpiCard();
+            this.kpiRetFreezes = new CRM.winforms.Controls.KpiCard();
+            this.kpiRetWinBacks = new CRM.winforms.Controls.KpiCard();
+            this.kpiRetRenewals = new CRM.winforms.Controls.KpiCard();
+            this.chartRetentionByDay = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            this.chartRetentionByAction = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            this.dgvRetentionReport = new System.Windows.Forms.DataGridView();
+
+            // Promo Usage controls
+            this.kpiPromoTotal = new CRM.winforms.Controls.KpiCard();
+            this.kpiPromoActive = new CRM.winforms.Controls.KpiCard();
+            this.kpiPromoRedemptions = new CRM.winforms.Controls.KpiCard();
+            this.kpiPromoAvgRate = new CRM.winforms.Controls.KpiCard();
+            this.chartPromoByCode = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            this.chartPromoByRate = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            this.dgvPromoReport = new System.Windows.Forms.DataGridView();
             this.tabLeadConversion = new System.Windows.Forms.TabPage();
             this.tabRetention = new System.Windows.Forms.TabPage();
             this.tabPromoUsage = new System.Windows.Forms.TabPage();
@@ -506,6 +532,272 @@ namespace CRM.winforms.Controls
             this.dgvAttendanceReport.Size = new System.Drawing.Size(810, 400);
             this.dgvAttendanceReport.TabIndex = 9;
             //
+            // tabLeadConversion
+            //
+            this.tabLeadConversion.Controls.Add(this.dgvLeadReport);
+            this.tabLeadConversion.Controls.Add(this.chartLeadByStatus);
+            this.tabLeadConversion.Controls.Add(this.chartLeadBySource);
+            this.tabLeadConversion.Controls.Add(this.kpiLeadRate);
+            this.tabLeadConversion.Controls.Add(this.kpiLeadLost);
+            this.tabLeadConversion.Controls.Add(this.kpiLeadConverted);
+            this.tabLeadConversion.Controls.Add(this.kpiLeadTotal);
+            this.tabLeadConversion.Location = new System.Drawing.Point(4, 24);
+            this.tabLeadConversion.Name = "tabLeadConversion";
+            this.tabLeadConversion.Padding = new System.Windows.Forms.Padding(3);
+            this.tabLeadConversion.Size = new System.Drawing.Size(852, 517);
+            this.tabLeadConversion.TabIndex = 3;
+            this.tabLeadConversion.Text = "Lead Conversion";
+            this.tabLeadConversion.UseVisualStyleBackColor = true;
+
+            // KPI cards — Lead Conversion
+            this.kpiLeadTotal.Location = new System.Drawing.Point(15, 12);
+            this.kpiLeadTotal.Size = new System.Drawing.Size(195, 90);
+            this.kpiLeadTotal.Title = "Total Leads";
+            this.kpiLeadTotal.Value = "0";
+            this.kpiLeadTotal.Subtitle = "in date range";
+
+            this.kpiLeadConverted.Location = new System.Drawing.Point(220, 12);
+            this.kpiLeadConverted.Size = new System.Drawing.Size(195, 90);
+            this.kpiLeadConverted.Title = "Converted";
+            this.kpiLeadConverted.Value = "0";
+            this.kpiLeadConverted.Subtitle = "converted leads";
+
+            this.kpiLeadLost.Location = new System.Drawing.Point(425, 12);
+            this.kpiLeadLost.Size = new System.Drawing.Size(195, 90);
+            this.kpiLeadLost.Title = "Lost";
+            this.kpiLeadLost.Value = "0";
+            this.kpiLeadLost.Subtitle = "lost leads";
+
+            this.kpiLeadRate.Location = new System.Drawing.Point(630, 12);
+            this.kpiLeadRate.Size = new System.Drawing.Size(195, 90);
+            this.kpiLeadRate.Title = "Conversion Rate";
+            this.kpiLeadRate.Value = "0%";
+            this.kpiLeadRate.Subtitle = "Converted / Total";
+
+            // chartLeadBySource
+            chartArea1.Name = "ChartArea1";
+            this.chartLeadBySource.ChartAreas.Add(chartArea1);
+            legend1.Name = "Legend1";
+            legend1.Enabled = false;
+            this.chartLeadBySource.Legends.Add(legend1);
+            this.chartLeadBySource.Location = new System.Drawing.Point(15, 115);
+            this.chartLeadBySource.Name = "chartLeadBySource";
+            series1.ChartArea = "ChartArea1";
+            series1.Legend = "Legend1";
+            series1.Name = "Leads";
+            series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Column;
+            this.chartLeadBySource.Series.Add(series1);
+            this.chartLeadBySource.Size = new System.Drawing.Size(400, 180);
+            this.chartLeadBySource.TabIndex = 10;
+
+            // chartLeadByStatus
+            chartArea2.Name = "ChartArea1";
+            this.chartLeadByStatus.ChartAreas.Add(chartArea2);
+            legend2.Name = "Legend2";
+            legend2.Enabled = false;
+            this.chartLeadByStatus.Legends.Add(legend2);
+            this.chartLeadByStatus.Location = new System.Drawing.Point(425, 115);
+            this.chartLeadByStatus.Name = "chartLeadByStatus";
+            series2.ChartArea = "ChartArea1";
+            series2.Legend = "Legend2";
+            series2.Name = "Status";
+            series2.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Doughnut;
+            this.chartLeadByStatus.Series.Add(series2);
+            this.chartLeadByStatus.Size = new System.Drawing.Size(400, 180);
+            this.chartLeadByStatus.TabIndex = 11;
+
+            // dgvLeadReport
+            this.dgvLeadReport.AllowUserToAddRows = false;
+            this.dgvLeadReport.AllowUserToDeleteRows = false;
+            this.dgvLeadReport.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.dgvLeadReport.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dgvLeadReport.Location = new System.Drawing.Point(15, 305);
+            this.dgvLeadReport.Name = "dgvLeadReport";
+            this.dgvLeadReport.ReadOnly = true;
+            this.dgvLeadReport.RowHeadersWidth = 51;
+            this.dgvLeadReport.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+            this.dgvLeadReport.Size = new System.Drawing.Size(810, 400);
+            this.dgvLeadReport.TabIndex = 12;
+
+            //
+            // tabRetention
+            //
+            this.tabRetention.Controls.Add(this.dgvRetentionReport);
+            this.tabRetention.Controls.Add(this.chartRetentionByAction);
+            this.tabRetention.Controls.Add(this.chartRetentionByDay);
+            this.tabRetention.Controls.Add(this.kpiRetRenewals);
+            this.tabRetention.Controls.Add(this.kpiRetWinBacks);
+            this.tabRetention.Controls.Add(this.kpiRetFreezes);
+            this.tabRetention.Controls.Add(this.kpiRetCancellations);
+            this.tabRetention.Location = new System.Drawing.Point(4, 24);
+            this.tabRetention.Name = "tabRetention";
+            this.tabRetention.Padding = new System.Windows.Forms.Padding(3);
+            this.tabRetention.Size = new System.Drawing.Size(852, 517);
+            this.tabRetention.TabIndex = 4;
+            this.tabRetention.Text = "Retention";
+            this.tabRetention.UseVisualStyleBackColor = true;
+
+            // KPI cards — Retention
+            this.kpiRetCancellations.Location = new System.Drawing.Point(15, 12);
+            this.kpiRetCancellations.Size = new System.Drawing.Size(195, 90);
+            this.kpiRetCancellations.Title = "Cancellations";
+            this.kpiRetCancellations.Value = "0";
+            this.kpiRetCancellations.Subtitle = "in range";
+
+            this.kpiRetFreezes.Location = new System.Drawing.Point(220, 12);
+            this.kpiRetFreezes.Size = new System.Drawing.Size(195, 90);
+            this.kpiRetFreezes.Title = "Freezes";
+            this.kpiRetFreezes.Value = "0";
+            this.kpiRetFreezes.Subtitle = "freeze actions";
+
+            this.kpiRetWinBacks.Location = new System.Drawing.Point(425, 12);
+            this.kpiRetWinBacks.Size = new System.Drawing.Size(195, 90);
+            this.kpiRetWinBacks.Title = "Win-Backs";
+            this.kpiRetWinBacks.Value = "0";
+            this.kpiRetWinBacks.Subtitle = "attempts";
+
+            this.kpiRetRenewals.Location = new System.Drawing.Point(630, 12);
+            this.kpiRetRenewals.Size = new System.Drawing.Size(195, 90);
+            this.kpiRetRenewals.Title = "Renewals";
+            this.kpiRetRenewals.Value = "0";
+            this.kpiRetRenewals.Subtitle = "successful renewals";
+
+            // chartRetentionByDay
+            chartArea3.Name = "ChartArea1";
+            this.chartRetentionByDay.ChartAreas.Add(chartArea3);
+            legend3.Name = "Legend3";
+            legend3.Enabled = false;
+            this.chartRetentionByDay.Legends.Add(legend3);
+            this.chartRetentionByDay.Location = new System.Drawing.Point(15, 115);
+            this.chartRetentionByDay.Name = "chartRetentionByDay";
+            series3.ChartArea = "ChartArea1";
+            series3.Legend = "Legend3";
+            series3.Name = "Actions";
+            series3.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
+            this.chartRetentionByDay.Series.Add(series3);
+            this.chartRetentionByDay.Size = new System.Drawing.Size(400, 180);
+            this.chartRetentionByDay.TabIndex = 13;
+
+            // chartRetentionByAction
+            chartArea4.Name = "ChartArea1";
+            this.chartRetentionByAction.ChartAreas.Add(chartArea4);
+            legend4.Name = "Legend4";
+            legend4.Enabled = false;
+            this.chartRetentionByAction.Legends.Add(legend4);
+            this.chartRetentionByAction.Location = new System.Drawing.Point(425, 115);
+            this.chartRetentionByAction.Name = "chartRetentionByAction";
+            series4.ChartArea = "ChartArea1";
+            series4.Legend = "Legend4";
+            series4.Name = "ActionType";
+            series4.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Doughnut;
+            this.chartRetentionByAction.Series.Add(series4);
+            this.chartRetentionByAction.Size = new System.Drawing.Size(400, 180);
+            this.chartRetentionByAction.TabIndex = 14;
+
+            // dgvRetentionReport
+            this.dgvRetentionReport.AllowUserToAddRows = false;
+            this.dgvRetentionReport.AllowUserToDeleteRows = false;
+            this.dgvRetentionReport.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.dgvRetentionReport.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dgvRetentionReport.Location = new System.Drawing.Point(15, 305);
+            this.dgvRetentionReport.Name = "dgvRetentionReport";
+            this.dgvRetentionReport.ReadOnly = true;
+            this.dgvRetentionReport.RowHeadersWidth = 51;
+            this.dgvRetentionReport.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+            this.dgvRetentionReport.Size = new System.Drawing.Size(810, 400);
+            this.dgvRetentionReport.TabIndex = 15;
+
+            //
+            // tabPromoUsage
+            //
+            this.tabPromoUsage.Controls.Add(this.dgvPromoReport);
+            this.tabPromoUsage.Controls.Add(this.chartPromoByRate);
+            this.tabPromoUsage.Controls.Add(this.chartPromoByCode);
+            this.tabPromoUsage.Controls.Add(this.kpiPromoAvgRate);
+            this.tabPromoUsage.Controls.Add(this.kpiPromoRedemptions);
+            this.tabPromoUsage.Controls.Add(this.kpiPromoActive);
+            this.tabPromoUsage.Controls.Add(this.kpiPromoTotal);
+            this.tabPromoUsage.Location = new System.Drawing.Point(4, 24);
+            this.tabPromoUsage.Name = "tabPromoUsage";
+            this.tabPromoUsage.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPromoUsage.Size = new System.Drawing.Size(852, 517);
+            this.tabPromoUsage.TabIndex = 5;
+            this.tabPromoUsage.Text = "Promo Usage";
+            this.tabPromoUsage.UseVisualStyleBackColor = true;
+
+            // KPI cards — Promo Usage
+            this.kpiPromoTotal.Location = new System.Drawing.Point(15, 12);
+            this.kpiPromoTotal.Size = new System.Drawing.Size(195, 90);
+            this.kpiPromoTotal.Title = "Total Codes";
+            this.kpiPromoTotal.Value = "0";
+            this.kpiPromoTotal.Subtitle = "in range";
+
+            this.kpiPromoActive.Location = new System.Drawing.Point(220, 12);
+            this.kpiPromoActive.Size = new System.Drawing.Size(195, 90);
+            this.kpiPromoActive.Title = "Active";
+            this.kpiPromoActive.Value = "0";
+            this.kpiPromoActive.Subtitle = "currently active";
+
+            this.kpiPromoRedemptions.Location = new System.Drawing.Point(425, 12);
+            this.kpiPromoRedemptions.Size = new System.Drawing.Size(195, 90);
+            this.kpiPromoRedemptions.Title = "Redemptions";
+            this.kpiPromoRedemptions.Value = "0";
+            this.kpiPromoRedemptions.Subtitle = "total uses";
+
+            this.kpiPromoAvgRate.Location = new System.Drawing.Point(630, 12);
+            this.kpiPromoAvgRate.Size = new System.Drawing.Size(195, 90);
+            this.kpiPromoAvgRate.Title = "Avg Rate";
+            this.kpiPromoAvgRate.Value = "0%";
+            this.kpiPromoAvgRate.Subtitle = "avg redemptions";
+
+            // chartPromoByCode
+            chartArea5.Name = "ChartArea1";
+            this.chartPromoByCode.ChartAreas.Add(chartArea5);
+            legend5.Name = "Legend5";
+            legend5.Enabled = false;
+            this.chartPromoByCode.Legends.Add(legend5);
+            this.chartPromoByCode.Location = new System.Drawing.Point(15, 115);
+            this.chartPromoByCode.Name = "chartPromoByCode";
+            series5.ChartArea = "ChartArea1";
+            series5.Legend = "Legend5";
+            series5.Name = "Redemptions";
+            series5.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Column;
+            this.chartPromoByCode.Series.Add(series5);
+            this.chartPromoByCode.Size = new System.Drawing.Size(400, 180);
+            this.chartPromoByCode.TabIndex = 16;
+
+            // chartPromoByRate
+            chartArea6.Name = "ChartArea1";
+            this.chartPromoByRate.ChartAreas.Add(chartArea6);
+            legend6.Name = "Legend6";
+            legend6.Enabled = false;
+            this.chartPromoByRate.Legends.Add(legend6);
+            this.chartPromoByRate.Location = new System.Drawing.Point(425, 115);
+            this.chartPromoByRate.Name = "chartPromoByRate";
+            series6.ChartArea = "ChartArea1";
+            series6.Legend = "Legend6";
+            series6.Name = "Rate";
+            series6.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Doughnut;
+            this.chartPromoByRate.Series.Add(series6);
+            this.chartPromoByRate.Size = new System.Drawing.Size(400, 180);
+            this.chartPromoByRate.TabIndex = 17;
+
+            // dgvPromoReport
+            this.dgvPromoReport.AllowUserToAddRows = false;
+            this.dgvPromoReport.AllowUserToDeleteRows = false;
+            this.dgvPromoReport.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.dgvPromoReport.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dgvPromoReport.Location = new System.Drawing.Point(15, 305);
+            this.dgvPromoReport.Name = "dgvPromoReport";
+            this.dgvPromoReport.ReadOnly = true;
+            this.dgvPromoReport.RowHeadersWidth = 51;
+            this.dgvPromoReport.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+            this.dgvPromoReport.Size = new System.Drawing.Size(810, 400);
+            this.dgvPromoReport.TabIndex = 18;
+            //
             // Empty tabs
             //
             this.tabLeadConversion.AutoScroll = true;
@@ -609,5 +901,28 @@ namespace CRM.winforms.Controls
         private System.Windows.Forms.DataVisualization.Charting.Chart chartAttendanceByDay;
         private System.Windows.Forms.DataVisualization.Charting.Chart chartAttendanceByHour;
         private System.Windows.Forms.DataGridView dgvAttendanceReport;
+        private KpiCard kpiLeadTotal;
+        private KpiCard kpiLeadConverted;
+        private KpiCard kpiLeadLost;
+        private KpiCard kpiLeadRate;
+        private System.Windows.Forms.DataVisualization.Charting.Chart chartLeadBySource;
+        private System.Windows.Forms.DataVisualization.Charting.Chart chartLeadByStatus;
+        private System.Windows.Forms.DataGridView dgvLeadReport;
+
+        private KpiCard kpiRetCancellations;
+        private KpiCard kpiRetFreezes;
+        private KpiCard kpiRetWinBacks;
+        private KpiCard kpiRetRenewals;
+        private System.Windows.Forms.DataVisualization.Charting.Chart chartRetentionByDay;
+        private System.Windows.Forms.DataVisualization.Charting.Chart chartRetentionByAction;
+        private System.Windows.Forms.DataGridView dgvRetentionReport;
+
+        private KpiCard kpiPromoTotal;
+        private KpiCard kpiPromoActive;
+        private KpiCard kpiPromoRedemptions;
+        private KpiCard kpiPromoAvgRate;
+        private System.Windows.Forms.DataVisualization.Charting.Chart chartPromoByCode;
+        private System.Windows.Forms.DataVisualization.Charting.Chart chartPromoByRate;
+        private System.Windows.Forms.DataGridView dgvPromoReport;
     }
 }

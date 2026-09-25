@@ -27,16 +27,298 @@ namespace CRM.winforms.Controls
             StyleGrid(dgvSalesReport);
             StyleGrid(dgvMembershipReport);
             StyleGrid(dgvAttendanceReport);
+            StyleGrid(dgvLeadReport);
+            StyleGrid(dgvRetentionReport);
+            StyleGrid(dgvPromoReport);
             StyleCharts();
             StyleAttendanceCharts();
+            StyleLeadConversionCharts();
+            StyleRetentionCharts();
+            StylePromoUsageCharts();
             SetDefaultDateRange();
             WireEvents();
+        }
+
+        private async System.Threading.Tasks.Task GenerateLeadConversionReportAsync()
+        {
+            try
+            {
+                var report = await _api.GetLeadConversionReportAsync(dtpFrom.Value, dtpTo.Value);
+                if (report is null) return;
+
+                kpiLeadTotal.Value = report.Total.ToString("N0");
+                kpiLeadConverted.Value = report.Converted.ToString("N0");
+                kpiLeadLost.Value = report.Lost.ToString("N0");
+                kpiLeadRate.Value = report.ConversionRate.ToString("F1") + "%";
+
+                chartLeadBySource.Series[0].Points.Clear();
+                int i = 0;
+                foreach (var s in report.BySource)
+                {
+                    var idx = chartLeadBySource.Series[0].Points.AddXY(i++, s.Count);
+                    var pt = chartLeadBySource.Series[0].Points[idx];
+                    pt.AxisLabel = s.Name;
+                    pt.ToolTip = $"{s.Name}: {s.Count} leads";
+                }
+
+                chartLeadByStatus.Series[0].Points.Clear();
+                foreach (var s in report.StatusDistribution)
+                {
+                    var idx = chartLeadByStatus.Series[0].Points.AddXY(s.Name, s.Count);
+                    var pt = chartLeadByStatus.Series[0].Points[idx];
+                    pt.ToolTip = $"{s.Name}: {s.Count}";
+                }
+
+                if (dgvLeadReport.Columns.Count == 0)
+                {
+                    dgvLeadReport.Columns.Add("FullName", "Full Name");
+                    dgvLeadReport.Columns.Add("Status", "Status");
+                    dgvLeadReport.Columns.Add("Source", "Source");
+                    dgvLeadReport.Columns.Add("CreatedAt", "Created At");
+                    dgvLeadReport.Columns.Add("ConvertedAt", "Converted At");
+                    dgvLeadReport.Columns.Add("ConvertedCustomerName", "Converted Customer");
+                }
+
+                dgvLeadReport.Rows.Clear();
+                foreach (var l in report.Leads)
+                {
+                    var row = new DataGridViewRow();
+                    row.CreateCells(dgvLeadReport,
+                        l.FullName,
+                        l.Status,
+                        l.Source,
+                        l.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd"),
+                        l.ConvertedAt.HasValue ? l.ConvertedAt.Value.ToLocalTime().ToString("yyyy-MM-dd") : "—",
+                        l.ConvertedCustomerName ?? "");
+                    dgvLeadReport.Rows.Add(row);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lead Conversion report failed: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async System.Threading.Tasks.Task GenerateRetentionReportAsync()
+        {
+            try
+            {
+                var report = await _api.GetRetentionReportAsync(dtpFrom.Value, dtpTo.Value);
+                if (report is null) return;
+
+                kpiRetCancellations.Value = report.Cancellations.ToString("N0");
+                kpiRetFreezes.Value = report.Freezes.ToString("N0");
+                kpiRetWinBacks.Value = report.WinBacks.ToString("N0");
+                kpiRetRenewals.Value = report.Renewals.ToString("N0");
+
+                chartRetentionByDay.Series[0].Points.Clear();
+                int i = 0;
+                foreach (var d in report.ByDay)
+                {
+                    var idx = chartRetentionByDay.Series[0].Points.AddXY(i++, d.Count);
+                    var pt = chartRetentionByDay.Series[0].Points[idx];
+                    pt.AxisLabel = d.Date;
+                    pt.ToolTip = $"{d.Date}: {d.Count} actions";
+                }
+
+                chartRetentionByAction.Series[0].Points.Clear();
+                foreach (var a in report.ByAction)
+                {
+                    var idx = chartRetentionByAction.Series[0].Points.AddXY(a.Name, a.Count);
+                    var pt = chartRetentionByAction.Series[0].Points[idx];
+                    pt.ToolTip = $"{a.Name}: {a.Count}";
+                }
+
+                if (dgvRetentionReport.Columns.Count == 0)
+                {
+                    dgvRetentionReport.Columns.Add("CustomerName", "Customer");
+                    dgvRetentionReport.Columns.Add("ActionType", "Action");
+                    dgvRetentionReport.Columns.Add("Outcome", "Outcome");
+                    dgvRetentionReport.Columns.Add("Timestamp", "Timestamp");
+                    dgvRetentionReport.Columns.Add("Notes", "Notes");
+                }
+
+                dgvRetentionReport.Rows.Clear();
+                foreach (var r in report.Actions)
+                {
+                    var row = new DataGridViewRow();
+                    row.CreateCells(dgvRetentionReport,
+                        r.CustomerName ?? "(unknown)",
+                        r.ActionType,
+                        r.Outcome,
+                        r.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm"),
+                        r.Notes ?? "");
+                    dgvRetentionReport.Rows.Add(row);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Retention report failed: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async System.Threading.Tasks.Task GeneratePromoUsageReportAsync()
+        {
+            try
+            {
+                var report = await _api.GetPromoUsageReportAsync(dtpFrom.Value, dtpTo.Value);
+                if (report is null) return;
+
+                kpiPromoTotal.Value = report.TotalCodes.ToString("N0");
+                kpiPromoActive.Value = report.ActiveCodes.ToString("N0");
+                kpiPromoRedemptions.Value = report.TotalRedemptions.ToString("N0");
+                kpiPromoAvgRate.Value = (report.AvgRate).ToString("P1");
+
+                chartPromoByCode.Series[0].Points.Clear();
+                int i = 0;
+                foreach (var p in report.ByCode)
+                {
+                    var idx = chartPromoByCode.Series[0].Points.AddXY(i++, p.Redemptions);
+                    var pt = chartPromoByCode.Series[0].Points[idx];
+                    pt.AxisLabel = p.Code;
+                    pt.ToolTip = $"{p.Code}: {p.Redemptions} redemptions";
+                }
+
+                chartPromoByRate.Series[0].Points.Clear();
+                var active = report.ActiveCodes;
+                var inactive = report.TotalCodes - report.ActiveCodes;
+                chartPromoByRate.Series[0].Points.AddXY("Active", active);
+                chartPromoByRate.Series[0].Points.AddXY("Inactive", inactive);
+
+                if (dgvPromoReport.Columns.Count == 0)
+                {
+                    dgvPromoReport.Columns.Add("Code", "Code");
+                    dgvPromoReport.Columns.Add("CurrentUses", "Current Uses");
+                    dgvPromoReport.Columns.Add("MaxUses", "Max Uses");
+                    dgvPromoReport.Columns.Add("ExpiresAt", "Expires At");
+                    dgvPromoReport.Columns.Add("PromotionName", "Promotion");
+                }
+
+                dgvPromoReport.Rows.Clear();
+                foreach (var p in report.PromoCodes)
+                {
+                    var row = new DataGridViewRow();
+                    row.CreateCells(dgvPromoReport,
+                        p.Code,
+                        p.CurrentUses,
+                        p.MaxUses.HasValue ? p.MaxUses.Value.ToString() : "—",
+                        p.ExpiresAt.HasValue ? p.ExpiresAt.Value.ToLocalTime().ToString("yyyy-MM-dd") : "—",
+                        p.PromotionName ?? "");
+                    dgvPromoReport.Rows.Add(row);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Promo Usage report failed: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void SetDefaultDateRange()
         {
             dtpFrom.Value = DateTime.Today.AddMonths(-6);
             dtpTo.Value = DateTime.Today;
+        }
+
+        private void StyleLeadConversionCharts()
+        {
+            foreach (var chart in new[] { chartLeadBySource, chartLeadByStatus })
+            {
+                chart.BackColor = Color.White;
+                chart.BorderlineColor = GridLine;
+                chart.BorderlineDashStyle = ChartDashStyle.Solid;
+                chart.BorderlineWidth = 1;
+
+                var area = chart.ChartAreas[0];
+                area.BackColor = Color.White;
+                area.AxisX.MajorGrid.LineColor = GridLine;
+                area.AxisY.MajorGrid.LineColor = GridLine;
+                area.AxisX.LabelStyle.Font = new Font("Segoe UI", 8F);
+                area.AxisY.LabelStyle.Font = new Font("Segoe UI", 8F);
+                area.AxisX.LineColor = GridLine;
+                area.AxisY.LineColor = GridLine;
+                area.AxisX.LabelStyle.Angle = -45;
+                area.AxisX.Interval = 1;
+            }
+
+            chartLeadBySource.Series[0].Color = Accent;
+            chartLeadBySource.Titles.Clear();
+            chartLeadBySource.Titles.Add(new Title("Leads by Source",
+                Docking.Top, new Font("Segoe UI", 10F, FontStyle.Bold), TextDark));
+
+            chartLeadByStatus.Series[0].IsValueShownAsLabel = true;
+            chartLeadByStatus.Series[0]["DoughnutRadius"] = "60";
+            chartLeadByStatus.Titles.Clear();
+            chartLeadByStatus.Titles.Add(new Title("Leads by Status",
+                Docking.Top, new Font("Segoe UI", 10F, FontStyle.Bold), TextDark));
+        }
+
+        private void StyleRetentionCharts()
+        {
+            foreach (var chart in new[] { chartRetentionByDay, chartRetentionByAction })
+            {
+                chart.BackColor = Color.White;
+                chart.BorderlineColor = GridLine;
+                chart.BorderlineDashStyle = ChartDashStyle.Solid;
+                chart.BorderlineWidth = 1;
+
+                var area = chart.ChartAreas[0];
+                area.BackColor = Color.White;
+                area.AxisX.MajorGrid.LineColor = GridLine;
+                area.AxisY.MajorGrid.LineColor = GridLine;
+                area.AxisX.LabelStyle.Font = new Font("Segoe UI", 8F);
+                area.AxisY.LabelStyle.Font = new Font("Segoe UI", 8F);
+                area.AxisX.LineColor = GridLine;
+                area.AxisY.LineColor = GridLine;
+                area.AxisX.LabelStyle.Angle = -45;
+                area.AxisX.Interval = 1;
+            }
+
+            chartRetentionByDay.Series[0].Color = Accent;
+            chartRetentionByDay.Titles.Clear();
+            chartRetentionByDay.Titles.Add(new Title("Retention Actions by Day",
+                Docking.Top, new Font("Segoe UI", 10F, FontStyle.Bold), TextDark));
+
+            chartRetentionByAction.Series[0].IsValueShownAsLabel = true;
+            chartRetentionByAction.Series[0]["DoughnutRadius"] = "60";
+            chartRetentionByAction.Titles.Clear();
+            chartRetentionByAction.Titles.Add(new Title("Retention by Action Type",
+                Docking.Top, new Font("Segoe UI", 10F, FontStyle.Bold), TextDark));
+        }
+
+        private void StylePromoUsageCharts()
+        {
+            foreach (var chart in new[] { chartPromoByCode, chartPromoByRate })
+            {
+                chart.BackColor = Color.White;
+                chart.BorderlineColor = GridLine;
+                chart.BorderlineDashStyle = ChartDashStyle.Solid;
+                chart.BorderlineWidth = 1;
+
+                var area = chart.ChartAreas[0];
+                area.BackColor = Color.White;
+                area.AxisX.MajorGrid.LineColor = GridLine;
+                area.AxisY.MajorGrid.LineColor = GridLine;
+                area.AxisX.LabelStyle.Font = new Font("Segoe UI", 8F);
+                area.AxisY.LabelStyle.Font = new Font("Segoe UI", 8F);
+                area.AxisX.LineColor = GridLine;
+                area.AxisY.LineColor = GridLine;
+                area.AxisX.LabelStyle.Angle = -45;
+                area.AxisX.Interval = 1;
+            }
+
+            chartPromoByCode.Series[0].Color = Accent;
+            chartPromoByCode.Titles.Clear();
+            chartPromoByCode.Titles.Add(new Title("Redemptions by Code",
+                Docking.Top, new Font("Segoe UI", 10F, FontStyle.Bold), TextDark));
+
+            chartPromoByRate.Series[0].IsValueShownAsLabel = true;
+            chartPromoByRate.Series[0]["DoughnutRadius"] = "60";
+            chartPromoByRate.Titles.Clear();
+            chartPromoByRate.Titles.Add(new Title("Active vs Inactive Promo Codes",
+                Docking.Top, new Font("Segoe UI", 10F, FontStyle.Bold), TextDark));
         }
 
         private void WireEvents()
@@ -192,6 +474,9 @@ namespace CRM.winforms.Controls
             await GenerateRevenueReportAsync();
             await GenerateMembershipReportAsync();
             await GenerateAttendanceReportAsync();
+            await GenerateLeadConversionReportAsync();
+            await GenerateRetentionReportAsync();
+            await GeneratePromoUsageReportAsync();
         }
 
         // ==========================================================
@@ -486,6 +771,9 @@ namespace CRM.winforms.Controls
             if (tabs.SelectedTab == tabRevenue) return dgvSalesReport;
             if (tabs.SelectedTab == tabMembership) return dgvMembershipReport;
             if (tabs.SelectedTab == tabAttendance) return dgvAttendanceReport;
+            if (tabs.SelectedTab == tabLeadConversion) return dgvLeadReport;
+            if (tabs.SelectedTab == tabRetention) return dgvRetentionReport;
+            if (tabs.SelectedTab == tabPromoUsage) return dgvPromoReport;
             return null;
         }
     }

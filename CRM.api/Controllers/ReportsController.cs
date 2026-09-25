@@ -88,6 +88,189 @@ namespace CRM.api.Controllers
                 }).OrderBy(s => s.SaleDate).ToList()
             });
         }
+
+        // ============================================================
+        // GET /reports/lead-conversion?from=&to=
+        // KPIs: total, converted, lost, conversion rate. Bar by Source,
+        // donut by Status, and per-lead rows for the grid.
+        // ============================================================
+        [HttpGet("lead-conversion")]
+        public async Task<IActionResult> GetLeadConversion(
+            int companyId,
+            [FromQuery] DateTime? from,
+            [FromQuery] DateTime? to)
+        {
+            var fromDate = (from ?? DateTime.UtcNow.AddMonths(-6)).Date;
+            var toDate = (to ?? DateTime.UtcNow).Date.AddDays(1).AddSeconds(-1);
+
+            await using var tenantDb = await _tenantFactory.CreateAsync(companyId);
+
+            var allInRange = await tenantDb.Leads
+                .Include(l => l.ConvertedCustomer)
+                .Where(l => l.IsActive
+                         && l.CreatedAt >= fromDate
+                         && l.CreatedAt <= toDate)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var total = allInRange.Count;
+            var converted = allInRange.Count(l => l.Status == LeadStatus.Converted || l.ConvertedAt != null);
+            var lost = allInRange.Count(l => l.Status == LeadStatus.Lost);
+            var conversionRate = total > 0 ? (decimal)converted / total * 100m : 0m;
+
+            var bySource = allInRange
+                .GroupBy(l => l.Source)
+                .OrderByDescending(g => g.Count())
+                .Select(g => new { Name = g.Key.ToString(), Count = g.Count() })
+                .ToList();
+
+            var statusDistribution = allInRange
+                .GroupBy(l => l.Status)
+                .Select(g => new { Name = g.Key.ToString(), Count = g.Count() })
+                .ToList();
+
+            return Ok(new
+            {
+                total,
+                converted,
+                lost,
+                conversionRate,
+                bySource,
+                statusDistribution,
+                leads = allInRange
+                    .OrderByDescending(l => l.CreatedAt)
+                    .Select(l => new
+                    {
+                        l.LeadId,
+                        l.FullName,
+                        Status = l.Status.ToString(),
+                        Source = l.Source.ToString(),
+                        l.CreatedAt,
+                        l.ConvertedAt,
+                        ConvertedCustomerName = l.ConvertedCustomer != null ? l.ConvertedCustomer.CustomerName : (string?)null
+                    })
+                    .ToList()
+            });
+        }
+
+        // ============================================================
+        // GET /reports/retention?from=&to=
+        // KPIs: cancellations, freezes, win-back, renewals. Line chart
+        // over time, donut by ActionType, and per-action rows.
+        // ============================================================
+        [HttpGet("retention")]
+        public async Task<IActionResult> GetRetention(
+            int companyId,
+            [FromQuery] DateTime? from,
+            [FromQuery] DateTime? to)
+        {
+            var fromDate = (from ?? DateTime.UtcNow.AddMonths(-6)).Date;
+            var toDate = (to ?? DateTime.UtcNow).Date.AddDays(1).AddSeconds(-1);
+
+            await using var tenantDb = await _tenantFactory.CreateAsync(companyId);
+
+            var allInRange = await tenantDb.RetentionActions
+                .Include(r => r.Customer)
+                .Where(r => r.Timestamp >= fromDate && r.Timestamp <= toDate)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var cancellations = allInRange.Count(r => r.ActionType == RetentionActionType.Cancelled);
+            var freezes = allInRange.Count(r => r.ActionType == RetentionActionType.FreezeApplied);
+            var winBacks = allInRange.Count(r => r.ActionType == RetentionActionType.WinBackAttempt);
+            var renewals = allInRange.Count(r => r.Outcome == RetentionOutcome.Renewed);
+
+            var byDay = allInRange
+                .GroupBy(r => r.Timestamp.Date)
+                .OrderBy(g => g.Key)
+                .Select(g => new { Date = g.Key.ToString("yyyy-MM-dd"), Count = g.Count() })
+                .ToList();
+
+            var byAction = allInRange
+                .GroupBy(r => r.ActionType)
+                .Select(g => new { Name = g.Key.ToString(), Count = g.Count() })
+                .ToList();
+
+            return Ok(new
+            {
+                cancellations,
+                freezes,
+                winBacks,
+                renewals,
+                byDay,
+                byAction,
+                actions = allInRange
+                    .OrderByDescending(r => r.Timestamp)
+                    .Select(r => new
+                    {
+                        r.RetentionActionId,
+                        r.CustomerId,
+                        CustomerName = r.Customer != null ? r.Customer.CustomerName : (string?)null,
+                        ActionType = r.ActionType.ToString(),
+                        Outcome = r.Outcome.ToString(),
+                        r.Timestamp,
+                        r.Notes
+                    })
+                    .ToList()
+            });
+        }
+
+        // ============================================================
+        // GET /reports/promo-usage?from=&to=
+        // KPIs: total codes, active, total redemptions, avg redemption rate.
+        // Bar by code (redemptions), and per-code rows.
+        // ============================================================
+        [HttpGet("promo-usage")]
+        public async Task<IActionResult> GetPromoUsage(
+            int companyId,
+            [FromQuery] DateTime? from,
+            [FromQuery] DateTime? to)
+        {
+            var fromDate = (from ?? DateTime.UtcNow.AddMonths(-6)).Date;
+            var toDate = (to ?? DateTime.UtcNow).Date.AddDays(1).AddSeconds(-1);
+
+            await using var tenantDb = await _tenantFactory.CreateAsync(companyId);
+
+            var codes = await tenantDb.PromoCodes
+                .Include(p => p.Promotion)
+                .Where(p => p.CreatedAt >= fromDate && p.CreatedAt <= toDate)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var totalCodes = codes.Count;
+            var activeCodes = codes.Count(p => p.IsActive && (p.ExpiresAt == null || p.ExpiresAt > DateTime.UtcNow));
+            var totalRedemptions = codes.Sum(p => p.CurrentUses);
+
+            var avgRate = codes.Count > 0
+                ? codes.Average(p => p.MaxUses.HasValue && p.MaxUses.Value > 0 ? (decimal)p.CurrentUses / p.MaxUses.Value : 0m)
+                : 0m;
+
+            var byCode = codes
+                .OrderByDescending(p => p.CurrentUses)
+                .Select(p => new { Code = p.Code, Redemptions = p.CurrentUses })
+                .ToList();
+
+            return Ok(new
+            {
+                totalCodes,
+                activeCodes,
+                totalRedemptions,
+                avgRate,
+                byCode,
+                promoCodes = codes
+                    .OrderByDescending(p => p.CurrentUses)
+                    .Select(p => new
+                    {
+                        p.PromoCodeId,
+                        p.Code,
+                        p.CurrentUses,
+                        p.MaxUses,
+                        p.ExpiresAt,
+                        PromotionName = p.Promotion != null ? p.Promotion.PromotionName : (string?)null
+                    })
+                    .ToList()
+            });
+        }
         // ============================================================
         // GET /reports/membership
         // Status counts (Active / Expiring Soon / Expired / Frozen),
@@ -262,4 +445,5 @@ namespace CRM.api.Controllers
             });
         }
     }
+// No-op patch: context sync
 }
