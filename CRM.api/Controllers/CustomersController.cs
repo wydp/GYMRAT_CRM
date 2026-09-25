@@ -22,6 +22,10 @@ namespace CRM.api.Controllers
         public async Task<IActionResult> Create(int companyId, [FromBody] Customer customer)
         {
             await using var tenantDb = await _tenantFactory.CreateAsync(companyId);
+            // Ensure server assigns the identity PK - ignore any client-supplied id.
+            customer.CustomerId = 0;
+            // Normalize CreatedAt on server to avoid trusting client clock.
+            customer.CreatedAt = DateTime.UtcNow;
             tenantDb.Customers.Add(customer);
 
             try

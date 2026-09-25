@@ -12,6 +12,7 @@ namespace CRM.winforms.Sync
     {
         private readonly LocalDbContext _local;
         private readonly ApiClient _api;
+        private readonly string _logPath;
         private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
@@ -21,6 +22,9 @@ namespace CRM.winforms.Sync
         {
             _local = localDbContext;
             _api = apiClient;
+            var dir = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "GymRat");
+            System.IO.Directory.CreateDirectory(dir);
+            _logPath = System.IO.Path.Combine(dir, "sync.log");
         }
 
         public async Task SyncAsync()
@@ -28,11 +32,15 @@ namespace CRM.winforms.Sync
             // Ensure local DB exists
             await _local.Database.EnsureCreatedAsync();
 
+            Log("Sync started");
+
             // 1. Push local outbox entries to server
             await PushOutboxAsync();
 
             // 2. Pull authoritative data from server and upsert locally
             await PullAndApplyAsync();
+
+            Log("Sync finished");
         }
 
         private async Task PushOutboxAsync()
@@ -41,6 +49,7 @@ namespace CRM.winforms.Sync
                 .OrderBy(o => o.CreatedAtUtc)
                 .ToListAsync();
 
+            Log($"PushOutbox: {pending.Count} entries pending");
             foreach (var entry in pending)
             {
                 try
@@ -134,6 +143,7 @@ namespace CRM.winforms.Sync
                     // If we reach here, assume success — remove outbox entry
                     _local.OutboxEntries.Remove(entry);
                     await _local.SaveChangesAsync();
+                    Log($"Pushed outbox entry {entry.OutboxEntryId} ({entry.EntityType}/{entry.Operation})");
                 }
                 catch (Exception)
                 {
@@ -141,12 +151,14 @@ namespace CRM.winforms.Sync
                     entry.AttemptCount++;
                     _local.OutboxEntries.Update(entry);
                     await _local.SaveChangesAsync();
+                    Log($"Failed pushing outbox entry {entry.OutboxEntryId}; attempt {entry.AttemptCount}");
                 }
             }
         }
 
         private async Task PullAndApplyAsync()
         {
+            Log("PullAndApply: starting pull");
             // Customers
             var customers = await _api.GetCustomersAsync();
             foreach (var c in customers)
@@ -207,6 +219,18 @@ namespace CRM.winforms.Sync
             }
 
             await _local.SaveChangesAsync();
+            Log($"PullAndApply: applied customers={customers.Count}, plans={plans.Count}, sales={sales.Count}");
+        }
+
+        private void Log(string message)
+        {
+            try
+            {
+                var ts = DateTime.UtcNow.ToString("o");
+                var line = $"[{ts}] {message}{Environment.NewLine}";
+                System.IO.File.AppendAllText(_logPath, line);
+            }
+            catch { /* swallow logging errors */ }
         }
     }
 }

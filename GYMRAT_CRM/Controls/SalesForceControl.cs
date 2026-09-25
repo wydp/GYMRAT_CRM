@@ -1,9 +1,13 @@
 using CRM.domain.Entities;
+using CRM.winforms.LocalData;
+using CRM.winforms.Sync;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
+using System.Text.Json;
 using System.Windows.Forms;
 
 namespace CRM.winforms.Controls
@@ -426,8 +430,90 @@ namespace CRM.winforms.Controls
 
             try
             {
-                await _api.CreateMembershipSaleAsync(sale);
-                MessageBox.Show($"Renewed {renewal.CustomerName}'s membership.", "Success",
+                // Local-first: write renewal sale to local DB and enqueue outbox
+                var dbPath = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "GymRat", $"tenant_{Model.AuthContext.CompanyId}.sqlite");
+                var options = new DbContextOptionsBuilder<LocalDbContext>()
+                    .UseSqlite($"Data Source={dbPath}")
+                    .Options;
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(dbPath) ?? ".");
+
+                using var localDb = new LocalDbContext(options);
+                await localDb.Database.EnsureCreatedAsync();
+
+                sale.MembershipSaleId = 0;
+                sale.CreatedAt = DateTime.UtcNow;
+
+                await localDb.MembershipSales.AddAsync(sale);
+                // Ensure referenced Customer and MembershipPlan exist locally to satisfy FK constraints
+                var existingCust = await localDb.Customers.FirstOrDefaultAsync(c => c.CustomerId == sale.CustomerId);
+                if (existingCust == null)
+                {
+                    var cust = _customers.FirstOrDefault(c => c.CustomerId == sale.CustomerId);
+                    if (cust != null)
+                    {
+                        await localDb.Customers.AddAsync(new Customer
+                        {
+                            CustomerId = cust.CustomerId,
+                            CustomerCode = cust.CustomerCode,
+                            CustomerName = cust.CustomerName,
+                            ContactNumber = cust.ContactNumber,
+                            EmailAddress = cust.EmailAddress,
+                            Address = cust.Address,
+                            IsActive = cust.IsActive,
+                            CreatedAt = cust.CreatedAt
+                        });
+                    }
+                }
+
+                var existingPlan = await localDb.MembershipPlans.FirstOrDefaultAsync(p => p.MembershipPlanId == sale.MembershipPlanId);
+                if (existingPlan == null)
+                {
+                    var planObj = _plans.FirstOrDefault(p => p.MembershipPlanId == sale.MembershipPlanId);
+                    if (planObj != null)
+                    {
+                        await localDb.MembershipPlans.AddAsync(new MembershipPlan
+                        {
+                            MembershipPlanId = planObj.MembershipPlanId,
+                            PlanCode = planObj.PlanCode,
+                            PlanName = planObj.PlanName,
+                            Description = planObj.Description,
+                            Price = planObj.Price,
+                            DurationInDays = planObj.DurationInDays,
+                            IsActive = planObj.IsActive,
+                            CreatedAt = planObj.CreatedAt
+                        });
+                    }
+                }
+
+                await localDb.SaveChangesAsync();
+
+                // Avoid serializing navigation properties (which would cause the API to attempt
+                // inserting related entities). Serialize a minimal DTO with only scalar fields.
+                sale.Customer = null;
+                sale.MembershipPlan = null;
+
+                var outbox = new OutboxEntry
+                {
+                    EntityType = "MembershipSale",
+                    Operation = "Create",
+                    Payload = JsonSerializer.Serialize(new
+                    {
+                        CustomerId = sale.CustomerId,
+                        MembershipPlanId = sale.MembershipPlanId,
+                        SaleDate = sale.SaleDate,
+                        AmountPaid = sale.AmountPaid,
+                        IsActive = sale.IsActive,
+                        CreatedAt = sale.CreatedAt
+                    })
+                };
+                await localDb.OutboxEntries.AddAsync(outbox);
+                await localDb.SaveChangesAsync();
+
+                SyncManager.Instance.QueueImmediateSync();
+
+                MessageBox.Show($"Renewed {renewal.CustomerName}'s membership (local).", "Success",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 await LoadRecentSalesAsync();
@@ -535,9 +621,93 @@ namespace CRM.winforms.Controls
 
             try
             {
-                await _api.CreateMembershipSaleAsync(sale);
+                // Local-first: write sale to local SQLite and enqueue outbox entry
+                var dbPath = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "GymRat", $"tenant_{Model.AuthContext.CompanyId}.sqlite");
+                var options = new DbContextOptionsBuilder<LocalDbContext>()
+                    .UseSqlite($"Data Source={dbPath}")
+                    .Options;
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(dbPath) ?? ".");
+
+                using var localDb = new LocalDbContext(options);
+                await localDb.Database.EnsureCreatedAsync();
+
+                // Ensure we don't accidentally set an identity value from client
+                sale.MembershipSaleId = 0;
+                sale.CreatedAt = DateTime.UtcNow;
+
+                await localDb.MembershipSales.AddAsync(sale);
+                // Ensure referenced Customer and MembershipPlan exist locally to satisfy FK constraints
+                var existingCust = await localDb.Customers.FirstOrDefaultAsync(c => c.CustomerId == sale.CustomerId);
+                if (existingCust == null)
+                {
+                    var cust = _customers.FirstOrDefault(c => c.CustomerId == sale.CustomerId);
+                    if (cust != null)
+                    {
+                        await localDb.Customers.AddAsync(new Customer
+                        {
+                            CustomerId = cust.CustomerId,
+                            CustomerCode = cust.CustomerCode,
+                            CustomerName = cust.CustomerName,
+                            ContactNumber = cust.ContactNumber,
+                            EmailAddress = cust.EmailAddress,
+                            Address = cust.Address,
+                            IsActive = cust.IsActive,
+                            CreatedAt = cust.CreatedAt
+                        });
+                    }
+                }
+
+                var existingPlan = await localDb.MembershipPlans.FirstOrDefaultAsync(p => p.MembershipPlanId == sale.MembershipPlanId);
+                if (existingPlan == null)
+                {
+                    var planObj = _plans.FirstOrDefault(p => p.MembershipPlanId == sale.MembershipPlanId);
+                    if (planObj != null)
+                    {
+                        await localDb.MembershipPlans.AddAsync(new MembershipPlan
+                        {
+                            MembershipPlanId = planObj.MembershipPlanId,
+                            PlanCode = planObj.PlanCode,
+                            PlanName = planObj.PlanName,
+                            Description = planObj.Description,
+                            Price = planObj.Price,
+                            DurationInDays = planObj.DurationInDays,
+                            IsActive = planObj.IsActive,
+                            CreatedAt = planObj.CreatedAt
+                        });
+                    }
+                }
+
+                await localDb.SaveChangesAsync();
+
+                // Avoid serializing navigation properties (which would cause the API to attempt
+                // inserting related entities). Serialize a minimal DTO with only scalar fields.
+                sale.Customer = null;
+                sale.MembershipPlan = null;
+
+                var outbox = new OutboxEntry
+                {
+                    EntityType = "MembershipSale",
+                    Operation = "Create",
+                    Payload = JsonSerializer.Serialize(new
+                    {
+                        CustomerId = sale.CustomerId,
+                        MembershipPlanId = sale.MembershipPlanId,
+                        SaleDate = sale.SaleDate,
+                        AmountPaid = sale.AmountPaid,
+                        IsActive = sale.IsActive,
+                        CreatedAt = sale.CreatedAt
+                    })
+                };
+                await localDb.OutboxEntries.AddAsync(outbox);
+                await localDb.SaveChangesAsync();
+
+                // Trigger background sync
+                SyncManager.Instance.QueueImmediateSync();
+
                 MessageBox.Show(
-                    $"Sale recorded: {customer.CustomerName} — {plan.PlanName} — {numAmount.Value.ToString("C2", PesoCulture)}",
+                    $"Sale recorded locally: {customer.CustomerName} — {plan.PlanName} — {numAmount.Value.ToString("C2", PesoCulture)}",
                     "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 ClearForm();

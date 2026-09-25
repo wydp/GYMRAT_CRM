@@ -26,6 +26,13 @@ namespace CRM.api.Controllers
             if (!customerExists || !planExists)
                 return BadRequest(new { message = "The specified customer or plan does not exist." });
 
+            // Defensive: ensure we don't attempt to insert related entities or explicit identity values
+            // when the client includes navigation properties or identity ids. Clear nav props and
+            // force server-side identity for the new sale.
+            sale.MembershipSaleId = 0;
+            sale.Customer = null;
+            sale.MembershipPlan = null;
+
             tenantDb.MembershipSales.Add(sale);
             await tenantDb.SaveChangesAsync();
             return Created($"/tenant/{companyId}/membershipsales/{sale.MembershipSaleId}", sale);
