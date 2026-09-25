@@ -37,7 +37,7 @@ namespace CRM.api.Controllers
             await using var tenantDb = await _tenantFactory.CreateAsync(companyId);
 
             var query = tenantDb.MembershipSales
-                .Where(x => x.IsActive)
+                .Where(x => x.IsActive && !x.IsCancelled)
                 .AsQueryable();
 
             if (from.HasValue)
@@ -54,6 +54,54 @@ namespace CRM.api.Controllers
                 .ToListAsync();
 
             return Ok(sales);
+        }
+
+        // Request shape for cancel — defined as a small class so the API has a
+        // typed contract, not a raw anonymous object.
+        public class CancelRequest
+        {
+            public string? Reason { get; set; }
+        }
+
+        [HttpPost("{id:int}/cancel")]
+        public async Task<IActionResult> Cancel(int companyId, int id, [FromBody] CancelRequest request)
+        {
+            // Who is doing this? Read the "userId" claim out of the JWT that
+            // the caller sent in the Authorization header.
+            var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdStr, out var userId))
+                return Unauthorized();
+
+            await using var tenantDb = await _tenantFactory.CreateAsync(companyId);
+
+            var sale = await tenantDb.MembershipSales
+                .Include(x => x.Customer)
+                .FirstOrDefaultAsync(x => x.MembershipSaleId == id && x.IsActive);
+
+            if (sale is null)
+                return NotFound(new { message = "Sale not found." });
+
+            if (sale.IsCancelled)
+                return BadRequest(new { message = "This sale is already cancelled." });
+
+            // Mark the sale as cancelled
+            sale.IsCancelled = true;
+            sale.CancelledAt = DateTime.UtcNow;
+            sale.CancellationReason = request.Reason;
+
+            // Log it as a retention action so the retention team sees the churn event
+            tenantDb.RetentionActions.Add(new RetentionAction
+            {
+                CustomerId = sale.CustomerId,
+                PerformedByUserId = userId,
+                ActionType = RetentionActionType.Cancelled,
+                Notes = request.Reason,
+                Outcome = RetentionOutcome.Lost,
+                Timestamp = DateTime.UtcNow,
+            });
+
+            await tenantDb.SaveChangesAsync();
+            return Ok(sale);
         }
     }
 }

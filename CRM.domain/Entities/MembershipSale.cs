@@ -16,6 +16,13 @@ namespace CRM.domain.Entities
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        // ---- cancellation ----
+        // Separate from IsActive: IsActive is soft-delete of the row;
+        // IsCancelled is the business fact that the membership was cancelled.
+        public bool IsCancelled { get; set; } = false;
+        public DateTime? CancelledAt { get; set; }
+        public string? CancellationReason { get; set; }
+
         public Customer? Customer { get; set; }
         public MembershipPlan? MembershipPlan { get; set; }
     }

@@ -68,7 +68,7 @@ namespace CRM.api.Controllers
 
             var sales = await tenantDb.MembershipSales
                 .Include(s => s.MembershipPlan)
-                .Where(s => s.IsActive)
+                .Where(s => s.IsActive && !s.IsCancelled)
                 .AsNoTracking()
                 .ToListAsync();
 

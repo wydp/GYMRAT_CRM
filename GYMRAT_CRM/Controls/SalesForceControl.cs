@@ -1,5 +1,6 @@
 using CRM.domain.Entities;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
@@ -12,6 +13,9 @@ namespace CRM.winforms.Controls
         private readonly ApiClient _api = new ApiClient();
         private static readonly CultureInfo PesoCulture = CultureInfo.GetCultureInfo("en-PH");
 
+        // Class-level field so WireEvents() can see it
+        private Button btnCancelMembership = null!;
+
         // Cache the loaded lists so we can look up the selected item's price/ID
         // without another HTTP call.
         private List<Customer> _customers = new();
@@ -21,12 +25,14 @@ namespace CRM.winforms.Controls
         {
             InitializeComponent();
             StyleGrid();
-            StyleMembershipsGrid();       // ← add this
-            StyleRenewalsGrid();          // ← add
+            StyleMembershipsGrid();
+            StyleRenewalsGrid();
+
+            BuildCancelMembershipButton();  // ← builds + adds to tab
+
             WireEvents();
             _ = LoadInitialDataAsync();
 
-            // Add the Leads tab content
             var leadControl = new LeadControl { Dock = DockStyle.Fill };
             tabLeads.Controls.Add(leadControl);
 
@@ -36,6 +42,26 @@ namespace CRM.winforms.Controls
             var historyControl = new AttendanceHistoryControl { Dock = DockStyle.Fill };
             tabHistory.Controls.Add(historyControl);
         }
+
+        private void BuildCancelMembershipButton()
+        {
+            btnCancelMembership = new Button
+            {
+                Name = "btnCancelMembership",
+                Text = "Cancel Membership",
+                Size = new Size(160, 30),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(185, 28, 28),
+                ForeColor = Color.White,
+                Cursor = Cursors.Hand,
+                Location = new Point(600, 10),
+            };
+            btnCancelMembership.FlatAppearance.BorderSize = 0;
+
+            tabMemberships.Controls.Add(btnCancelMembership);
+            btnCancelMembership.BringToFront();
+        }
+
         private void StyleGrid()
         {
             dgvRecentSales.BorderStyle = BorderStyle.None;
@@ -140,9 +166,9 @@ namespace CRM.winforms.Controls
             btnClear.Click += (s, e) => ClearForm();
             cmbPlan.SelectedIndexChanged += (s, e) => AutoFillAmountFromPlan();
 
-            // new:
             btnRefreshMemberships.Click += async (s, e) => await LoadMembershipsAsync();
             chkMembershipsActiveOnly.CheckedChanged += async (s, e) => await LoadMembershipsAsync();
+            btnCancelMembership.Click += async (s, e) => await CancelSelectedMembershipAsync();
 
             btnRefreshRenewals.Click += async (s, e) => await LoadRenewalsAsync();
             btnRenew.Click += async (s, e) => await RenewSelectedAsync();
@@ -156,9 +182,9 @@ namespace CRM.winforms.Controls
                 _plans = await _api.GetMembershipPlansAsync();
 
                 cmbCustomer.DataSource = _customers;
-                cmbCustomer.DisplayMember = "CustomerName"; // what the user sees
-                cmbCustomer.ValueMember = "CustomerId";      // what we read from SelectedValue
-                cmbCustomer.SelectedIndex = -1;              // start empty
+                cmbCustomer.DisplayMember = "CustomerName";
+                cmbCustomer.ValueMember = "CustomerId";
+                cmbCustomer.SelectedIndex = -1;
 
                 cmbPlan.DataSource = _plans;
                 cmbPlan.DisplayMember = "PlanName";
@@ -168,8 +194,8 @@ namespace CRM.winforms.Controls
                 dtpSaleDate.Value = DateTime.Today;
 
                 await LoadRecentSalesAsync();
-                await LoadMembershipsAsync();   // ← add this
-                await LoadRenewalsAsync();   // ← add
+                await LoadMembershipsAsync();
+                await LoadRenewalsAsync();
             }
             catch (Exception ex)
             {
@@ -183,7 +209,6 @@ namespace CRM.winforms.Controls
             var sales = await _api.GetMembershipSalesAsync();
             dgvRecentSales.Rows.Clear();
 
-            // Show the most recent 30 sales, newest first
             foreach (var s in sales.OrderByDescending(x => x.SaleDate).Take(30))
             {
                 var row = new DataGridViewRow();
@@ -198,11 +223,9 @@ namespace CRM.winforms.Controls
             }
         }
 
-        // Compute the membership status for each customer from their
-        // most recent MembershipSale. This is derived data — no new
-        // table, no new endpoint, just math.
         private class MembershipRow
         {
+            public int MembershipSaleId { get; set; }
             public int CustomerId { get; set; }
             public string CustomerName { get; set; } = string.Empty;
             public string PlanName { get; set; } = string.Empty;
@@ -218,7 +241,6 @@ namespace CRM.winforms.Controls
             {
                 var sales = await _api.GetMembershipSalesAsync();
 
-                // Group by customer, take the most recent sale per customer.
                 var latestPerCustomer = sales
                     .Where(s => s.Customer != null && s.MembershipPlan != null)
                     .GroupBy(s => s.CustomerId)
@@ -240,6 +262,7 @@ namespace CRM.winforms.Controls
 
                     rows.Add(new MembershipRow
                     {
+                        MembershipSaleId = s.MembershipSaleId,
                         CustomerId = s.CustomerId,
                         CustomerName = s.Customer!.CustomerName,
                         PlanName = s.MembershipPlan.PlanName,
@@ -250,7 +273,6 @@ namespace CRM.winforms.Controls
                     });
                 }
 
-                // Apply the "Active only" checkbox filter
                 if (chkMembershipsActiveOnly.Checked)
                     rows = rows.Where(r => r.Status != "Expired").ToList();
 
@@ -267,14 +289,16 @@ namespace CRM.winforms.Controls
                         r.DaysLeft >= 0 ? r.DaysLeft.ToString() : "—",
                         r.Status);
 
+                    row.Tag = r.MembershipSaleId;
+
                     int rowIndex = dgvMemberships.Rows.Add(row);
 
                     var statusCell = dgvMemberships.Rows[rowIndex].Cells["Status"];
                     statusCell.Style.ForeColor = r.Status switch
                     {
-                        "Active" => Color.FromArgb(21, 128, 61),        // green
-                        "Expiring Soon" => Color.FromArgb(180, 83, 9),  // amber
-                        _ => Color.FromArgb(185, 28, 28),               // red
+                        "Active" => Color.FromArgb(21, 128, 61),
+                        "Expiring Soon" => Color.FromArgb(180, 83, 9),
+                        _ => Color.FromArgb(185, 28, 28),
                     };
                 }
 
@@ -292,9 +316,6 @@ namespace CRM.winforms.Controls
             }
         }
 
-        // Rows in the Renewals tab — subset of memberships, filtered to
-        // expiring-within-30-days (including already-expired, since those
-        // are also renewal candidates).
         private class RenewalRow
         {
             public int CustomerId { get; set; }
@@ -328,7 +349,6 @@ namespace CRM.winforms.Controls
                     var expiry = s.SaleDate.Date.AddDays(s.MembershipPlan!.DurationInDays);
                     var daysLeft = (expiry - today).Days;
 
-                    // Include: already expired, or expiring within 30 days.
                     if (daysLeft > 30) continue;
 
                     _renewalRows.Add(new RenewalRow
@@ -360,8 +380,8 @@ namespace CRM.winforms.Controls
 
                     var daysCell = dgvRenewals.Rows[rowIndex].Cells["DaysLeft"];
                     daysCell.Style.ForeColor = r.DaysLeft < 0
-                        ? Color.FromArgb(185, 28, 28)   // red — already expired
-                        : Color.FromArgb(180, 83, 9);   // amber — expiring soon
+                        ? Color.FromArgb(185, 28, 28)
+                        : Color.FromArgb(180, 83, 9);
                 }
 
                 lblRenewalsSummary.Text = _renewalRows.Count == 0
@@ -410,7 +430,6 @@ namespace CRM.winforms.Controls
                 MessageBox.Show($"Renewed {renewal.CustomerName}'s membership.", "Success",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                // Refresh all three grids — the customer's status changed
                 await LoadRecentSalesAsync();
                 await LoadMembershipsAsync();
                 await LoadRenewalsAsync();
@@ -422,8 +441,57 @@ namespace CRM.winforms.Controls
             }
         }
 
-        // When a plan is selected, pre-fill the Amount field with its price.
-        // The user can still override it — sales may have discounts applied.
+        private async System.Threading.Tasks.Task CancelSelectedMembershipAsync()
+        {
+            if (dgvMemberships.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Select a membership to cancel.", "No Selection",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var row = dgvMemberships.SelectedRows[0];
+            if (row.Tag is not int saleId) return;
+
+            var customerName = row.Cells["CustomerName"].Value?.ToString() ?? "(unknown)";
+            var planName = row.Cells["PlanName"].Value?.ToString() ?? "(unknown)";
+            var status = row.Cells["Status"].Value?.ToString() ?? "";
+
+            if (status == "Expired")
+            {
+                MessageBox.Show(
+                    "This membership is already expired. Cancellation only applies to active memberships.",
+                    "Already Expired", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            using var dialog = new CancelReasonDialog(customerName, planName);
+            if (dialog.ShowDialog(this) != DialogResult.OK) return;
+            var reason = dialog.Reason!;
+
+            try
+            {
+                await _api.CancelMembershipSaleAsync(saleId, reason);
+                MessageBox.Show(
+                    $"Cancelled {customerName}'s membership.",
+                    "Cancelled", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                await LoadRecentSalesAsync();
+                await LoadMembershipsAsync();
+                await LoadRenewalsAsync();
+            }
+            catch (InvalidOperationException ex)
+            {
+                MessageBox.Show(ex.Message, "Cancellation Failed",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not cancel: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         private void AutoFillAmountFromPlan()
         {
             if (cmbPlan.SelectedItem is MembershipPlan plan)
@@ -460,7 +528,7 @@ namespace CRM.winforms.Controls
             {
                 CustomerId = customer.CustomerId,
                 MembershipPlanId = plan.MembershipPlanId,
-                SaleDate = dtpSaleDate.Value.ToUniversalTime(), // store as UTC
+                SaleDate = dtpSaleDate.Value.ToUniversalTime(),
                 AmountPaid = numAmount.Value,
                 IsActive = true,
             };
@@ -474,7 +542,7 @@ namespace CRM.winforms.Controls
 
                 ClearForm();
                 await LoadRecentSalesAsync();
-                await LoadMembershipsAsync();   // ← add this — the new sale may change someone's status
+                await LoadMembershipsAsync();
                 await LoadRenewalsAsync();
             }
             catch (InvalidOperationException ex)

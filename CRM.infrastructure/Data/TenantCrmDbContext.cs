@@ -98,6 +98,8 @@ namespace CRM.infrastructure.Data
             {
                 entity.HasKey(x => x.MembershipSaleId);
                 entity.Property(x => x.AmountPaid).HasPrecision(18, 2);
+                entity.Property(x => x.CancellationReason).HasMaxLength(500);
+                entity.Property(x => x.IsCancelled).HasDefaultValue(false);
 
                 entity.HasOne(x => x.Customer)
                       .WithMany()

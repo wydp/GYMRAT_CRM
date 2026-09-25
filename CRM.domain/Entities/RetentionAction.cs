@@ -30,7 +30,9 @@ namespace CRM.domain.Entities
         FollowUpScheduled,  // "Schedule Follow-Up Call"
         FreezeApplied,      // "Manage Membership Freeze"
         FreezeLifted,       // unfrozen
-        WinBackAttempt      // for the win-back pipeline
+        WinBackAttempt,     // for the win-back pipeline
+        Cancelled           // membership cancelled via SFA
+
     }
 
     public enum RetentionOutcome

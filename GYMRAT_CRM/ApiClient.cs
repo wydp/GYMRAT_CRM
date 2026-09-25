@@ -123,6 +123,21 @@ namespace CRM.winforms
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadFromJsonAsync<MembershipSale>(JsonOptions);
         }
+        public async Task CancelMembershipSaleAsync(int id, string reason)
+        {
+            var response = await _http.PostAsJsonAsync(
+                $"/tenant/{CompanyId}/membershipsales/{id}/cancel",
+                new { reason }, JsonOptions);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                throw new InvalidOperationException(
+                    await ExtractErrorMessageAsync(response, "Cannot cancel this sale."));
+
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                throw new InvalidOperationException("Sale not found.");
+
+            response.EnsureSuccessStatusCode();
+        }
 
         public async Task<List<MembershipSale>> GetMembershipSalesReportAsync(DateTime from, DateTime to)
         {
