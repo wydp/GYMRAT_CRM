@@ -9,8 +9,8 @@ namespace CRM.infrastructure.Data
         public DbSet<Company> Companies => Set<Company>();
         public DbSet<CompanyDatabase> CompanyDatabases => Set<CompanyDatabase>();
         public DbSet<Device> Devices { get; set; }
-        public DbSet<Role> Roles => Set<Role>();
-        public DbSet<User> Users => Set<User>();
+        public new DbSet<Role> Roles => Set<Role>();
+        public new DbSet<User> Users => Set<User>();
         public DbSet<Permission> Permissions => Set<Permission>();
         public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();

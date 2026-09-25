@@ -68,6 +68,44 @@ namespace CRM.winforms
             ApplyPalette();
             SetupProfileMenu();
             BuildSidebar();
+            // Subscribe to sync status updates
+            CRM.winforms.Sync.SyncManager.Instance.StatusChanged += status =>
+            {
+                if (this.IsDisposed) return;
+                try
+                {
+                    // Map free-form status messages to a simple synced/offline state
+                    var isOffline = false;
+                    if (string.IsNullOrWhiteSpace(status)) isOffline = true;
+                    else if (status.IndexOf("failed", StringComparison.OrdinalIgnoreCase) >= 0) isOffline = true;
+                    else if (status.IndexOf("offline", StringComparison.OrdinalIgnoreCase) >= 0) isOffline = true;
+                    else if (status.IndexOf("Syncing", StringComparison.OrdinalIgnoreCase) >= 0) isOffline = false; // treat syncing as online
+                    else if (status.IndexOf("Idle", StringComparison.OrdinalIgnoreCase) >= 0) isOffline = false;
+
+                    this.Invoke(() =>
+                    {
+                        try
+                        {
+                            syncBadgeLabel.Text = isOffline ? "Offline" : "Synced";
+                            syncDotPanel.BackColor = isOffline ? System.Drawing.Color.FromArgb(156, 163, 175) : System.Drawing.Color.FromArgb(34, 197, 94);
+                            syncDotPanel.Invalidate();
+                        }
+                        catch { }
+                    });
+                }
+                catch { }
+            };
+        }
+
+        // Paint handler draws a circular dot for sync indicator
+        private void SyncDotPanel_Paint(object? sender, System.Windows.Forms.PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            var panel = sender as System.Windows.Forms.Panel;
+            var color = panel?.BackColor ?? System.Drawing.Color.Gray;
+            using var brush = new System.Drawing.SolidBrush(color);
+            g.FillEllipse(brush, 0, 0, panel!.Width - 1, panel.Height - 1);
         }
 
         private void ApplyPalette()

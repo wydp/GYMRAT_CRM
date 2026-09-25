@@ -129,7 +129,7 @@ namespace CRM.winforms.Controls
                     row.CreateCells(dgvStaff,
                         s.Username,
                         s.FullName,
-                        s.Email ?? "",
+                        s.Email ?? string.Empty,
                         s.RoleName,
                         branchDisplay,
                         s.IsActive ? "Active" : "Inactive",

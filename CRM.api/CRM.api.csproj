@@ -22,4 +22,8 @@
     <ProjectReference Include="..\CRM.infrastructure\CRM.infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Helpers\" />
+  </ItemGroup>
+
 </Project>

@@ -23,8 +23,18 @@
             this.logoLabel = new System.Windows.Forms.Label();
             this.sidebarPanel = new System.Windows.Forms.Panel();
             this.contentPanel = new System.Windows.Forms.Panel();
+            this.syncBadgePanel = new System.Windows.Forms.Panel();
+            this.syncDotPanel = new System.Windows.Forms.Panel();
+            this.syncBadgeLabel = new System.Windows.Forms.Label();
+            this.topPanelBorder = new System.Windows.Forms.Panel();
             this.topPanel.SuspendLayout();
             this.SuspendLayout();
+
+            // ensure new controls are instantiated before property assignment to avoid NullReferenceExceptions
+            // (syncBadgePanel, syncDotPanel, syncBadgeLabel, topPanelBorder) were missing instantiation previously
+            // and caused syncBadgePanel to be null at runtime. This change is safe: it mirrors how the designer
+            // normally instantiates controls before setting properties.
+
             //
             // topPanel
             // NOTE: added to Controls LAST (see Form1.cs comment / InitializeComponent
@@ -74,6 +84,45 @@
             this.profileLabel.Text = "Moni Roy \u25BE";
             this.profileLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             //
+            // syncBadgePanel
+            //
+            this.syncBadgePanel.Location = new System.Drawing.Point(860, 18);
+            this.syncBadgePanel.Name = "syncBadgePanel";
+            this.syncBadgePanel.Size = new System.Drawing.Size(120, 24);
+            this.syncBadgePanel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            //
+            // syncDotPanel
+            //
+            this.syncDotPanel.Location = new System.Drawing.Point(6, 7);
+            this.syncDotPanel.Name = "syncDotPanel";
+            this.syncDotPanel.Size = new System.Drawing.Size(10, 10);
+            this.syncDotPanel.TabIndex = 0;
+            this.syncDotPanel.BackColor = System.Drawing.Color.FromArgb(34, 197, 94); // green
+            this.syncDotPanel.Paint += new System.Windows.Forms.PaintEventHandler(this.SyncDotPanel_Paint);
+            //
+            // syncBadgeLabel
+            //
+            this.syncBadgeLabel.AutoSize = true;
+            this.syncBadgeLabel.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.syncBadgeLabel.Location = new System.Drawing.Point(22, 3);
+            this.syncBadgeLabel.Name = "syncBadgeLabel";
+            this.syncBadgeLabel.Size = new System.Drawing.Size(38, 15);
+            this.syncBadgeLabel.TabIndex = 1;
+            this.syncBadgeLabel.Text = "Synced";
+            this.syncBadgeLabel.ForeColor = System.Drawing.Color.FromArgb(107, 114, 128);
+
+            //
+            // topPanelBorder
+            //
+            this.topPanelBorder.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.topPanelBorder.Height = 1;
+            this.topPanelBorder.BackColor = System.Drawing.Color.FromArgb(229, 231, 235);
+            // assemble sync badge and add to top panel
+            this.syncBadgePanel.Controls.Add(this.syncDotPanel);
+            this.syncBadgePanel.Controls.Add(this.syncBadgeLabel);
+            this.topPanel.Controls.Add(this.syncBadgePanel);
+            this.topPanel.Controls.Add(this.topPanelBorder);
+            //
             // sidebarPanel
             //
             this.sidebarPanel.BackColor = System.Drawing.Color.White;
@@ -107,6 +156,7 @@
             this.Text = "GymRat CRM";
             this.topPanel.ResumeLayout(false);
             this.topPanel.PerformLayout();
+
             this.ResumeLayout(false);
         }
 
@@ -118,5 +168,9 @@
         private System.Windows.Forms.Label profileLabel;
         private System.Windows.Forms.Panel sidebarPanel;
         private System.Windows.Forms.Panel contentPanel;
+        private System.Windows.Forms.Panel syncBadgePanel;
+        private System.Windows.Forms.Panel syncDotPanel;
+        private System.Windows.Forms.Label syncBadgeLabel;
+        private System.Windows.Forms.Panel topPanelBorder;
     }
 }

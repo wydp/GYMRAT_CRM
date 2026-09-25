@@ -1,4 +1,5 @@
 ﻿using CRM.winforms.Model;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Windows.Forms;
 
@@ -67,6 +68,18 @@ namespace CRM.winforms
                     result.Token,
                     result.ExpiresAt);
 
+                // Start background sync manager (runs periodically) - non-blocking
+                try
+                {
+                    if (result.CompanyId.HasValue)
+                        CRM.winforms.Sync.SyncManager.Instance.Start(result.CompanyId.Value, _api, TimeSpan.FromSeconds(30));
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to start sync manager: {ex.Message}");
+                }
+
+                // Allow the first sync to run in background; show main UI immediately so app is responsive
                 var main = new Form1();
                 main.Show();
                 this.Hide();

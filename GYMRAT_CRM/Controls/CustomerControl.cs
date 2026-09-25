@@ -1,7 +1,11 @@
 using CRM.domain.Entities;
+using CRM.winforms.LocalData;
+using CRM.winforms.Sync;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Drawing;
 using System.Linq;
+using System.Text.Json;
 using System.Windows.Forms;
 
 namespace CRM.winforms.Controls
@@ -67,7 +71,39 @@ namespace CRM.winforms.Controls
         {
             try
             {
-                var customers = await _api.GetCustomersAsync();
+                // Load from local DB first for offline support
+                var dbPath = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "GymRat", $"tenant_{Model.AuthContext.CompanyId}.sqlite");
+                var options = new DbContextOptionsBuilder<LocalDbContext>()
+                    .UseSqlite($"Data Source={dbPath}")
+                    .Options;
+
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(dbPath) ?? ".");
+
+                using var localDb = new LocalDbContext(options);
+                await localDb.Database.EnsureCreatedAsync();
+
+                var customers = await localDb.Customers.OrderBy(x => x.CustomerId).ToListAsync();
+
+                // If local has no data, try pulling from server and populating local DB
+                if (customers.Count == 0)
+                {
+                    try
+                    {
+                        var remote = await _api.GetCustomersAsync();
+                        if (remote != null && remote.Count > 0)
+                        {
+                            await localDb.Customers.AddRangeAsync(remote);
+                            await localDb.SaveChangesAsync();
+                            customers = remote.OrderBy(x => x.CustomerId).ToList();
+                        }
+                    }
+                    catch
+                    {
+                        // ignore remote fetch failure; we'll show empty local data
+                    }
+                }
                 dgvCustomers.Rows.Clear();
 
                 foreach (var c in customers.OrderBy(x => x.CustomerId))
@@ -97,7 +133,7 @@ namespace CRM.winforms.Controls
             }
         }
 
-        private void DgvCustomers_SelectionChanged(object sender, EventArgs e)
+        private void DgvCustomers_SelectionChanged(object? sender, EventArgs e)
         {
             if (dgvCustomers.SelectedRows.Count == 0) return;
 
@@ -119,7 +155,36 @@ namespace CRM.winforms.Controls
 
             try
             {
-                await _api.CreateCustomerAsync(BuildCustomerFromForm());
+                var customer = BuildCustomerFromForm();
+
+                var dbPath = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "GymRat", $"tenant_{Model.AuthContext.CompanyId}.sqlite");
+                var options = new DbContextOptionsBuilder<LocalDbContext>()
+                    .UseSqlite($"Data Source={dbPath}")
+                    .Options;
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(dbPath) ?? ".");
+
+                using var localDb = new LocalDbContext(options);
+                await localDb.Database.EnsureCreatedAsync();
+
+                // Add locally
+                await localDb.Customers.AddAsync(customer);
+                await localDb.SaveChangesAsync();
+
+                // Add to outbox
+                var outbox = new OutboxEntry
+                {
+                    EntityType = "Customer",
+                    Operation = "Create",
+                    Payload = JsonSerializer.Serialize(customer)
+                };
+                await localDb.OutboxEntries.AddAsync(outbox);
+                await localDb.SaveChangesAsync();
+
+                // Trigger immediate sync
+                SyncManager.Instance.QueueImmediateSync();
+
                 ClearForm();
                 await LoadCustomersAsync();
             }
@@ -143,7 +208,45 @@ namespace CRM.winforms.Controls
             {
                 var customer = BuildCustomerFromForm();
                 customer.CustomerId = _selectedCustomerId.Value;
-                await _api.UpdateCustomerAsync(_selectedCustomerId.Value, customer);
+
+                var dbPath = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "GymRat", $"tenant_{Model.AuthContext.CompanyId}.sqlite");
+                var options = new DbContextOptionsBuilder<LocalDbContext>()
+                    .UseSqlite($"Data Source={dbPath}")
+                    .Options;
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(dbPath) ?? ".");
+
+                using var localDb = new LocalDbContext(options);
+                await localDb.Database.EnsureCreatedAsync();
+
+                var local = await localDb.Customers.FirstOrDefaultAsync(c => c.CustomerId == customer.CustomerId);
+                if (local != null)
+                {
+                    local.CustomerName = customer.CustomerName;
+                    local.ContactNumber = customer.ContactNumber;
+                    local.EmailAddress = customer.EmailAddress;
+                    local.Address = customer.Address;
+                    local.IsActive = customer.IsActive;
+                    localDb.Customers.Update(local);
+                }
+                else
+                {
+                    localDb.Customers.Add(customer);
+                }
+                await localDb.SaveChangesAsync();
+
+                var outbox = new OutboxEntry
+                {
+                    EntityType = "Customer",
+                    Operation = "Update",
+                    Payload = JsonSerializer.Serialize(customer)
+                };
+                await localDb.OutboxEntries.AddAsync(outbox);
+                await localDb.SaveChangesAsync();
+
+                SyncManager.Instance.QueueImmediateSync();
+
                 ClearForm();
                 await LoadCustomersAsync();
             }
@@ -166,7 +269,36 @@ namespace CRM.winforms.Controls
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             if (confirm != DialogResult.Yes) return;
 
-            await _api.DeactivateCustomerAsync(_selectedCustomerId.Value);
+            var dbPath = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "GymRat", $"tenant_{Model.AuthContext.CompanyId}.sqlite");
+            var options = new DbContextOptionsBuilder<LocalDbContext>()
+                .UseSqlite($"Data Source={dbPath}")
+                .Options;
+            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(dbPath) ?? ".");
+
+            using var localDb = new LocalDbContext(options);
+            await localDb.Database.EnsureCreatedAsync();
+
+            var local = await localDb.Customers.FirstOrDefaultAsync(c => c.CustomerId == _selectedCustomerId.Value);
+            if (local != null)
+            {
+                local.IsActive = false;
+                localDb.Customers.Update(local);
+                await localDb.SaveChangesAsync();
+
+                var outbox = new OutboxEntry
+                {
+                    EntityType = "Customer",
+                    Operation = "Delete",
+                    Payload = JsonSerializer.Serialize(new { CustomerId = local.CustomerId })
+                };
+                await localDb.OutboxEntries.AddAsync(outbox);
+                await localDb.SaveChangesAsync();
+
+                SyncManager.Instance.QueueImmediateSync();
+            }
+
             ClearForm();
             await LoadCustomersAsync();
         }

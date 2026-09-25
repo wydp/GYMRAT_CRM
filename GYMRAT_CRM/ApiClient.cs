@@ -483,6 +483,20 @@ namespace CRM.winforms
         }
 
         // ==================================================================
+        // REPORTS
+        // ==================================================================
+
+        public async Task<RevenueReportDto?> GetRevenueReportAsync(DateTime from, DateTime to)
+        {
+            var fromStr = from.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            var toStr = to.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+
+            return await _http.GetFromJsonAsync<RevenueReportDto>(
+                $"/tenant/{CompanyId}/reports/revenue?from={fromStr}&to={toStr}",
+                JsonOptions);
+        }
+
+        // ==================================================================
         // STAFF MANAGEMENT
         // ==================================================================
 
@@ -718,6 +732,40 @@ namespace CRM.winforms
             public int CustomerId { get; set; }
             public int? BranchId { get; set; }
             public string? Notes { get; set; }
+        }
+
+        public class RevenueReportDto
+        {
+            public decimal TotalRevenue { get; set; }
+            public int SaleCount { get; set; }
+            public decimal AvgSale { get; set; }
+            public int CancelledCount { get; set; }
+            public List<RevenueByMonth> ByMonth { get; set; } = new();
+            public List<RevenueByPlan> ByPlan { get; set; } = new();
+            public List<RevenueSale> Sales { get; set; } = new();
+        }
+
+        public class RevenueByMonth
+        {
+            public string Month { get; set; } = string.Empty;
+            public decimal Revenue { get; set; }
+            public int Count { get; set; }
+        }
+
+        public class RevenueByPlan
+        {
+            public string PlanName { get; set; } = string.Empty;
+            public decimal Revenue { get; set; }
+            public int Count { get; set; }
+        }
+
+        public class RevenueSale
+        {
+            public int MembershipSaleId { get; set; }
+            public DateTime SaleDate { get; set; }
+            public decimal AmountPaid { get; set; }
+            public string CustomerName { get; set; } = string.Empty;
+            public string PlanName { get; set; } = string.Empty;
         }
     }
 }

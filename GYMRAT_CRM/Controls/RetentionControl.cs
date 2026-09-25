@@ -126,12 +126,12 @@ namespace CRM.winforms.Controls
                     var row = new DataGridViewRow();
                     row.CreateCells(dgvAtRisk,
                         m.CustomerCode,
-                        m.CustomerName,
+                        m.CustomerName ?? string.Empty,
                         m.ContactNumber ?? "—",
-                        m.PlanName,
+                        m.PlanName ?? string.Empty,
                         m.ExpiryDate.ToString("yyyy-MM-dd"),
                         m.DaysLeft >= 0 ? m.DaysLeft.ToString() : $"{Math.Abs(m.DaysLeft)} overdue",
-                        m.Status,
+                        m.Status ?? string.Empty,
                         m.IsFrozen ? "Yes" : "No");
                     row.Tag = m;
 

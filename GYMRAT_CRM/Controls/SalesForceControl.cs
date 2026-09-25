@@ -282,8 +282,8 @@ namespace CRM.winforms.Controls
                 {
                     var row = new DataGridViewRow();
                     row.CreateCells(dgvMemberships,
-                        r.CustomerName,
-                        r.PlanName,
+                        r.CustomerName ?? string.Empty,
+                        r.PlanName ?? string.Empty,
                         r.StartDate.ToString("yyyy-MM-dd"),
                         r.ExpiryDate.ToString("yyyy-MM-dd"),
                         r.DaysLeft >= 0 ? r.DaysLeft.ToString() : "—",
@@ -369,8 +369,8 @@ namespace CRM.winforms.Controls
                 {
                     var row = new DataGridViewRow();
                     row.CreateCells(dgvRenewals,
-                        r.CustomerName,
-                        r.PlanName,
+                        r.CustomerName ?? string.Empty,
+                        r.PlanName ?? string.Empty,
                         r.ExpiryDate.ToString("yyyy-MM-dd"),
                         r.DaysLeft >= 0 ? r.DaysLeft.ToString() : $"{-r.DaysLeft} overdue",
                         r.PlanPrice.ToString("C2", PesoCulture));
