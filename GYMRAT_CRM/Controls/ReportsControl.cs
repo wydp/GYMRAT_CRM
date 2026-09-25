@@ -14,18 +14,21 @@ namespace CRM.winforms.Controls
         private readonly ApiClient _api = new ApiClient();
         private static readonly CultureInfo PesoCulture = CultureInfo.GetCultureInfo("en-PH");
 
-        // Palette
         private static readonly Color Accent = Color.FromArgb(72, 128, 255);
         private static readonly Color TextDark = Color.FromArgb(31, 41, 55);
         private static readonly Color GridLine = Color.FromArgb(229, 231, 235);
         private static readonly Color DangerRed = Color.FromArgb(185, 28, 28);
         private static readonly Color SuccessGreen = Color.FromArgb(21, 128, 61);
+        private static readonly Color Amber = Color.FromArgb(180, 83, 9);
 
         public ReportsControl()
         {
             InitializeComponent();
             StyleGrid(dgvSalesReport);
+            StyleGrid(dgvMembershipReport);
+            StyleGrid(dgvAttendanceReport);
             StyleCharts();
+            StyleAttendanceCharts();
             SetDefaultDateRange();
             WireEvents();
         }
@@ -58,7 +61,6 @@ namespace CRM.winforms.Controls
                     dtpTo.Value = today;
                     break;
                 case "week":
-                    // Week starting Monday
                     int diff = ((int)today.DayOfWeek + 6) % 7;
                     dtpFrom.Value = today.AddDays(-diff);
                     dtpTo.Value = today;
@@ -102,7 +104,8 @@ namespace CRM.winforms.Controls
 
         private void StyleCharts()
         {
-            foreach (var chart in new[] { chartRevenueByMonth, chartRevenueByPlan })
+            foreach (var chart in new[] { chartRevenueByMonth, chartRevenueByPlan,
+                                          chartMembershipStatus, chartMembershipByPlan })
             {
                 chart.BackColor = Color.White;
                 chart.BorderlineColor = GridLine;
@@ -119,20 +122,61 @@ namespace CRM.winforms.Controls
                 area.AxisX.LineColor = GridLine;
                 area.AxisY.LineColor = GridLine;
                 area.AxisX.LabelStyle.Angle = -45;
-                area.AxisX.Interval = 1;                          // ← this is the key fix
+                area.AxisX.Interval = 1;
             }
 
-            // Line chart color
             chartRevenueByMonth.Series[0].Color = Accent;
             chartRevenueByMonth.Series[0].MarkerColor = Accent;
             chartRevenueByMonth.Titles.Clear();
             chartRevenueByMonth.Titles.Add(new Title("Revenue by Month",
                 Docking.Top, new Font("Segoe UI", 10F, FontStyle.Bold), TextDark));
 
-            // Bar chart
             chartRevenueByPlan.Series[0].Color = Accent;
             chartRevenueByPlan.Titles.Clear();
             chartRevenueByPlan.Titles.Add(new Title("Revenue by Plan",
+                Docking.Top, new Font("Segoe UI", 10F, FontStyle.Bold), TextDark));
+
+            chartMembershipStatus.Series[0].IsValueShownAsLabel = true;
+            chartMembershipStatus.Series[0]["DoughnutRadius"] = "60";
+            chartMembershipStatus.Titles.Clear();
+            chartMembershipStatus.Titles.Add(new Title("Membership Status",
+                Docking.Top, new Font("Segoe UI", 10F, FontStyle.Bold), TextDark));
+
+            chartMembershipByPlan.Series[0].Color = Accent;
+            chartMembershipByPlan.Titles.Clear();
+            chartMembershipByPlan.Titles.Add(new Title("Members by Plan",
+                Docking.Top, new Font("Segoe UI", 10F, FontStyle.Bold), TextDark));
+        }
+
+        private void StyleAttendanceCharts()
+        {
+            foreach (var chart in new[] { chartAttendanceByDay, chartAttendanceByHour })
+            {
+                chart.BackColor = Color.White;
+                chart.BorderlineColor = GridLine;
+                chart.BorderlineDashStyle = ChartDashStyle.Solid;
+                chart.BorderlineWidth = 1;
+
+                var area = chart.ChartAreas[0];
+                area.BackColor = Color.White;
+                area.AxisX.MajorGrid.LineColor = GridLine;
+                area.AxisY.MajorGrid.LineColor = GridLine;
+                area.AxisX.LabelStyle.Font = new Font("Segoe UI", 8F);
+                area.AxisY.LabelStyle.Font = new Font("Segoe UI", 8F);
+                area.AxisX.LineColor = GridLine;
+                area.AxisY.LineColor = GridLine;
+                area.AxisX.LabelStyle.Angle = -45;
+                area.AxisX.Interval = 1;
+            }
+
+            chartAttendanceByDay.Series[0].Color = Accent;
+            chartAttendanceByDay.Titles.Clear();
+            chartAttendanceByDay.Titles.Add(new Title("Check-Ins by Day",
+                Docking.Top, new Font("Segoe UI", 10F, FontStyle.Bold), TextDark));
+
+            chartAttendanceByHour.Series[0].Color = Amber;
+            chartAttendanceByHour.Titles.Clear();
+            chartAttendanceByHour.Titles.Add(new Title("Check-Ins by Hour",
                 Docking.Top, new Font("Segoe UI", 10F, FontStyle.Bold), TextDark));
         }
 
@@ -146,7 +190,8 @@ namespace CRM.winforms.Controls
             }
 
             await GenerateRevenueReportAsync();
-            // Later: await GenerateMembershipReportAsync(); etc.
+            await GenerateMembershipReportAsync();
+            await GenerateAttendanceReportAsync();
         }
 
         // ==========================================================
@@ -158,51 +203,33 @@ namespace CRM.winforms.Controls
             try
             {
                 var report = await _api.GetRevenueReportAsync(dtpFrom.Value, dtpTo.Value);
-                if (report is null)
-                {
-                    MessageBox.Show("Report endpoint returned no data.", "Empty",
-                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
+                if (report is null) return;
 
-                // --- KPI cards ---
                 kpiRevenueTotal.Value = report.TotalRevenue.ToString("C2", PesoCulture);
                 kpiRevenueCount.Value = report.SaleCount.ToString("N0");
                 kpiRevenueAvg.Value = report.AvgSale.ToString("C2", PesoCulture);
                 kpiRevenueCancelled.Value = report.CancelledCount.ToString("N0");
 
-                // --- Line chart: revenue by month ---
                 chartRevenueByMonth.Series[0].Points.Clear();
-                int monthIndex = 0;
-                foreach (var m in report.ByMonth)
+                int m = 0;
+                foreach (var x in report.ByMonth)
                 {
-                    var idx = chartRevenueByMonth.Series[0].Points.AddXY(monthIndex, m.Revenue);
-                    var point = chartRevenueByMonth.Series[0].Points[idx];
-                    point.AxisLabel = m.Month;                       // use month string as the label
-                    point.ToolTip = $"{m.Month}: {m.Revenue.ToString("C2", PesoCulture)} ({m.Count} sales)";
-                    monthIndex++;
+                    var idx = chartRevenueByMonth.Series[0].Points.AddXY(m++, x.Revenue);
+                    var pt = chartRevenueByMonth.Series[0].Points[idx];
+                    pt.AxisLabel = x.Month;
+                    pt.ToolTip = $"{x.Month}: {x.Revenue.ToString("C2", PesoCulture)} ({x.Count} sales)";
                 }
 
-                // Force categorical-style rendering so the labels are respected
-                chartRevenueByMonth.ChartAreas[0].AxisX.Interval = 1;
-                chartRevenueByMonth.ChartAreas[0].AxisX.LabelStyle.Angle = -45;
-                chartRevenueByMonth.ChartAreas[0].AxisX.IsMarginVisible = false;
-
-                // --- Bar chart: revenue by plan ---
                 chartRevenueByPlan.Series[0].Points.Clear();
-                int planIndex = 0;
-                foreach (var p in report.ByPlan)
+                int p = 0;
+                foreach (var x in report.ByPlan)
                 {
-                    var idx = chartRevenueByPlan.Series[0].Points.AddXY(planIndex, p.Revenue);
-                    var point = chartRevenueByPlan.Series[0].Points[idx];
-                    point.AxisLabel = p.PlanName;
-                    point.ToolTip = $"{p.PlanName}: {p.Revenue.ToString("C2", PesoCulture)} ({p.Count} sales)";
-                    planIndex++;
+                    var idx = chartRevenueByPlan.Series[0].Points.AddXY(p++, x.Revenue);
+                    var pt = chartRevenueByPlan.Series[0].Points[idx];
+                    pt.AxisLabel = x.PlanName;
+                    pt.ToolTip = $"{x.PlanName}: {x.Revenue.ToString("C2", PesoCulture)} ({x.Count} sales)";
                 }
 
-                chartRevenueByPlan.ChartAreas[0].AxisX.Interval = 1;
-
-                // --- Grid ---
                 if (dgvSalesReport.Columns.Count == 0)
                 {
                     dgvSalesReport.Columns.Add("SaleDate", "Sale Date");
@@ -222,19 +249,167 @@ namespace CRM.winforms.Controls
                         s.CustomerName,
                         s.PlanName,
                         s.AmountPaid.ToString("C2", PesoCulture));
-                    row.Tag = s.MembershipSaleId;
                     dgvSalesReport.Rows.Add(row);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Could not generate revenue report: {ex.Message}", "Error",
+                MessageBox.Show($"Revenue report failed: {ex.Message}", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         // ==========================================================
-        // EXPORT + PRINT (shared across tabs)
+        // TAB 2 — Membership
+        // ==========================================================
+
+        private async System.Threading.Tasks.Task GenerateMembershipReportAsync()
+        {
+            try
+            {
+                var report = await _api.GetMembershipReportAsync();
+                if (report is null) return;
+
+                kpiMemberActive.Value = report.ActiveCount.ToString("N0");
+                kpiMemberExpiring.Value = report.ExpiringSoonCount.ToString("N0");
+                kpiMemberExpired.Value = report.ExpiredCount.ToString("N0");
+                kpiMemberFrozen.Value = report.FrozenCount.ToString("N0");
+
+                chartMembershipStatus.Series[0].Points.Clear();
+                foreach (var s in report.StatusDistribution)
+                {
+                    var idx = chartMembershipStatus.Series[0].Points.AddXY(s.Status, s.Count);
+                    var pt = chartMembershipStatus.Series[0].Points[idx];
+                    pt.ToolTip = $"{s.Status}: {s.Count}";
+                    pt.Color = s.Status switch
+                    {
+                        "Active" => SuccessGreen,
+                        "Expiring Soon" => Amber,
+                        "Expired" => DangerRed,
+                        "Frozen" => Accent,
+                        _ => Color.Gray,
+                    };
+                }
+
+                chartMembershipByPlan.Series[0].Points.Clear();
+                int i = 0;
+                foreach (var x in report.ByPlan)
+                {
+                    var idx = chartMembershipByPlan.Series[0].Points.AddXY(i++, x.Count);
+                    var pt = chartMembershipByPlan.Series[0].Points[idx];
+                    pt.AxisLabel = x.PlanName;
+                    pt.ToolTip = $"{x.PlanName}: {x.Count} members";
+                }
+
+                if (dgvMembershipReport.Columns.Count == 0)
+                {
+                    dgvMembershipReport.Columns.Add("CustomerCode", "Code");
+                    dgvMembershipReport.Columns.Add("CustomerName", "Customer");
+                    dgvMembershipReport.Columns.Add("PlanName", "Plan");
+                    dgvMembershipReport.Columns.Add("StartDate", "Start");
+                    dgvMembershipReport.Columns.Add("ExpiryDate", "Expiry");
+                    dgvMembershipReport.Columns.Add("DaysLeft", "Days Left");
+                    dgvMembershipReport.Columns.Add("Status", "Status");
+                }
+
+                dgvMembershipReport.Rows.Clear();
+                foreach (var x in report.Members)
+                {
+                    var row = new DataGridViewRow();
+                    row.CreateCells(dgvMembershipReport,
+                        x.CustomerCode,
+                        x.CustomerName,
+                        x.PlanName,
+                        x.StartDate.ToString("yyyy-MM-dd"),
+                        x.ExpiryDate.ToString("yyyy-MM-dd"),
+                        x.DaysLeft >= 0 ? x.DaysLeft.ToString() : "—",
+                        x.Status);
+
+                    int rowIndex = dgvMembershipReport.Rows.Add(row);
+                    var sc = dgvMembershipReport.Rows[rowIndex].Cells["Status"];
+                    sc.Style.ForeColor = x.Status switch
+                    {
+                        "Active" => SuccessGreen,
+                        "Expiring Soon" => Amber,
+                        "Expired" => DangerRed,
+                        _ => Accent,
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Membership report failed: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        // ==========================================================
+        // TAB 3 — Attendance
+        // ==========================================================
+
+        private async System.Threading.Tasks.Task GenerateAttendanceReportAsync()
+        {
+            try
+            {
+                var report = await _api.GetAttendanceReportAsync(dtpFrom.Value, dtpTo.Value);
+                if (report is null) return;
+
+                kpiAttToday.Value = report.TodayCount.ToString("N0");
+                kpiAttWeek.Value = report.WeekCount.ToString("N0");
+                kpiAttMonth.Value = report.MonthCount.ToString("N0");
+                kpiAttUnique.Value = report.UniqueMembers.ToString("N0");
+
+                chartAttendanceByDay.Series[0].Points.Clear();
+                int i = 0;
+                foreach (var d in report.ByDay)
+                {
+                    var idx = chartAttendanceByDay.Series[0].Points.AddXY(i++, d.Count);
+                    var pt = chartAttendanceByDay.Series[0].Points[idx];
+                    pt.AxisLabel = d.Date;
+                    pt.ToolTip = $"{d.Date}: {d.Count} check-ins";
+                }
+
+                chartAttendanceByHour.Series[0].Points.Clear();
+                int j = 0;
+                foreach (var h in report.ByHour)
+                {
+                    var idx = chartAttendanceByHour.Series[0].Points.AddXY(j++, h.Count);
+                    var pt = chartAttendanceByHour.Series[0].Points[idx];
+                    pt.AxisLabel = $"{h.Hour:D2}:00";
+                    pt.ToolTip = $"{h.Hour:D2}:00 — {h.Count} check-ins";
+                }
+
+                if (dgvAttendanceReport.Columns.Count == 0)
+                {
+                    dgvAttendanceReport.Columns.Add("CustomerName", "Customer");
+                    dgvAttendanceReport.Columns.Add("CheckInTime", "Check-In");
+                    dgvAttendanceReport.Columns.Add("CheckOutTime", "Check-Out");
+                    dgvAttendanceReport.Columns.Add("Notes", "Notes");
+                }
+
+                dgvAttendanceReport.Rows.Clear();
+                foreach (var a in report.Attendance)
+                {
+                    var row = new DataGridViewRow();
+                    row.CreateCells(dgvAttendanceReport,
+                        a.CustomerName,
+                        a.CheckInTime.ToLocalTime().ToString("yyyy-MM-dd HH:mm"),
+                        a.CheckOutTime.HasValue
+                            ? a.CheckOutTime.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                            : "—",
+                        a.Notes ?? "");
+                    dgvAttendanceReport.Rows.Add(row);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Attendance report failed: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        // ==========================================================
+        // EXPORT + PRINT
         // ==========================================================
 
         private void ExportCurrentTab()
@@ -263,7 +438,6 @@ namespace CRM.winforms.Controls
 
             var doc = new PrintDocument();
             doc.DocumentName = $"GymRat Report — {tabs.SelectedTab?.Text}";
-
             int rowIndex = 0;
 
             doc.PrintPage += (s, e) =>
@@ -271,30 +445,20 @@ namespace CRM.winforms.Controls
                 var g = e.Graphics!;
                 var font = new Font("Segoe UI", 9F);
                 var headerFont = new Font("Segoe UI", 10F, FontStyle.Bold);
-                int y = 40;
-                int x = 40;
-                int rowHeight = 22;
-                int colWidth = 180;
+                int y = 40, x = 40, rowHeight = 22, colWidth = 180;
 
-                // Title
-                g.DrawString(doc.DocumentName, new Font("Segoe UI", 14F, FontStyle.Bold),
-                    Brushes.Black, x, y);
+                g.DrawString(doc.DocumentName, new Font("Segoe UI", 14F, FontStyle.Bold), Brushes.Black, x, y);
                 y += 30;
-                g.DrawString($"Generated: {DateTime.Now:yyyy-MM-dd HH:mm}",
-                    font, Brushes.Gray, x, y);
+                g.DrawString($"Generated: {DateTime.Now:yyyy-MM-dd HH:mm}", font, Brushes.Gray, x, y);
                 y += 30;
 
-                // Header row
                 for (int c = 0; c < grid.Columns.Count; c++)
-                {
-                    g.DrawString(grid.Columns[c].HeaderText, headerFont, Brushes.Black,
-                        x + (c * colWidth), y);
-                }
+                    g.DrawString(grid.Columns[c].HeaderText, headerFont, Brushes.Black, x + (c * colWidth), y);
+
                 y += rowHeight;
                 g.DrawLine(Pens.Black, x, y, x + (grid.Columns.Count * colWidth), y);
                 y += 4;
 
-                // Data rows
                 while (rowIndex < grid.Rows.Count && y < e.MarginBounds.Bottom - rowHeight)
                 {
                     var row = grid.Rows[rowIndex];
@@ -313,18 +477,15 @@ namespace CRM.winforms.Controls
                 e.HasMorePages = rowIndex < grid.Rows.Count;
             };
 
-            using var preview = new PrintPreviewDialog
-            {
-                Document = doc,
-                Width = 1000,
-                Height = 700,
-            };
+            using var preview = new PrintPreviewDialog { Document = doc, Width = 1000, Height = 700 };
             preview.ShowDialog(this);
         }
 
-        private DataGridView GetCurrentTabGrid()
+        private DataGridView? GetCurrentTabGrid()
         {
             if (tabs.SelectedTab == tabRevenue) return dgvSalesReport;
+            if (tabs.SelectedTab == tabMembership) return dgvMembershipReport;
+            if (tabs.SelectedTab == tabAttendance) return dgvAttendanceReport;
             return null;
         }
     }

@@ -496,6 +496,23 @@ namespace CRM.winforms
                 JsonOptions);
         }
 
+        public async Task<MembershipReportDto?> GetMembershipReportAsync()
+        {
+            return await _http.GetFromJsonAsync<MembershipReportDto>(
+                $"/tenant/{CompanyId}/reports/membership",
+                JsonOptions);
+        }
+
+        public async Task<AttendanceReportDto?> GetAttendanceReportAsync(DateTime from, DateTime to)
+        {
+            var fromStr = from.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            var toStr = to.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+
+            return await _http.GetFromJsonAsync<AttendanceReportDto>(
+                $"/tenant/{CompanyId}/reports/attendance?from={fromStr}&to={toStr}",
+                JsonOptions);
+        }
+
         // ==================================================================
         // STAFF MANAGEMENT
         // ==================================================================
@@ -766,6 +783,76 @@ namespace CRM.winforms
             public decimal AmountPaid { get; set; }
             public string CustomerName { get; set; } = string.Empty;
             public string PlanName { get; set; } = string.Empty;
+        }
+
+        public class MembershipReportDto
+        {
+            public int ActiveCount { get; set; }
+            public int ExpiringSoonCount { get; set; }
+            public int ExpiredCount { get; set; }
+            public int FrozenCount { get; set; }
+            public int TotalCustomers { get; set; }
+            public List<StatusCount> StatusDistribution { get; set; } = new();
+            public List<PlanCount> ByPlan { get; set; } = new();
+            public List<MemberRow> Members { get; set; } = new();
+        }
+
+        public class StatusCount
+        {
+            public string Status { get; set; } = string.Empty;
+            public int Count { get; set; }
+        }
+
+        public class PlanCount
+        {
+            public string PlanName { get; set; } = string.Empty;
+            public int Count { get; set; }
+        }
+
+        public class MemberRow
+        {
+            public int CustomerId { get; set; }
+            public string CustomerCode { get; set; } = string.Empty;
+            public string CustomerName { get; set; } = string.Empty;
+            public string PlanName { get; set; } = string.Empty;
+            public DateTime StartDate { get; set; }
+            public DateTime ExpiryDate { get; set; }
+            public int DaysLeft { get; set; }
+            public string Status { get; set; } = string.Empty;
+            public bool IsFrozen { get; set; }
+        }
+
+        public class AttendanceReportDto
+        {
+            public int TodayCount { get; set; }
+            public int WeekCount { get; set; }
+            public int MonthCount { get; set; }
+            public int UniqueMembers { get; set; }
+            public List<AttendanceByDay> ByDay { get; set; } = new();
+            public List<AttendanceByHour> ByHour { get; set; } = new();
+            public List<AttendanceRow> Attendance { get; set; } = new();
+        }
+
+        public class AttendanceByDay
+        {
+            public string Date { get; set; } = string.Empty;
+            public int Count { get; set; }
+        }
+
+        public class AttendanceByHour
+        {
+            public int Hour { get; set; }
+            public int Count { get; set; }
+        }
+
+        public class AttendanceRow
+        {
+            public int AttendanceId { get; set; }
+            public int CustomerId { get; set; }
+            public string CustomerName { get; set; } = string.Empty;
+            public DateTime CheckInTime { get; set; }
+            public DateTime? CheckOutTime { get; set; }
+            public string? Notes { get; set; }
         }
     }
 }
