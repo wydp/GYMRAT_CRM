@@ -118,6 +118,8 @@ namespace CRM.winforms.Controls
                 area.AxisY.LabelStyle.Font = new Font("Segoe UI", 8F);
                 area.AxisX.LineColor = GridLine;
                 area.AxisY.LineColor = GridLine;
+                area.AxisX.LabelStyle.Angle = -45;
+                area.AxisX.Interval = 1;                          // ← this is the key fix
             }
 
             // Line chart color
@@ -171,21 +173,34 @@ namespace CRM.winforms.Controls
 
                 // --- Line chart: revenue by month ---
                 chartRevenueByMonth.Series[0].Points.Clear();
+                int monthIndex = 0;
                 foreach (var m in report.ByMonth)
                 {
-                    var idx = chartRevenueByMonth.Series[0].Points.AddXY(m.Month, m.Revenue);
-                    chartRevenueByMonth.Series[0].Points[idx].ToolTip =
-                        $"{m.Month}: {m.Revenue.ToString("C2", PesoCulture)} ({m.Count} sales)";
+                    var idx = chartRevenueByMonth.Series[0].Points.AddXY(monthIndex, m.Revenue);
+                    var point = chartRevenueByMonth.Series[0].Points[idx];
+                    point.AxisLabel = m.Month;                       // use month string as the label
+                    point.ToolTip = $"{m.Month}: {m.Revenue.ToString("C2", PesoCulture)} ({m.Count} sales)";
+                    monthIndex++;
                 }
+
+                // Force categorical-style rendering so the labels are respected
+                chartRevenueByMonth.ChartAreas[0].AxisX.Interval = 1;
+                chartRevenueByMonth.ChartAreas[0].AxisX.LabelStyle.Angle = -45;
+                chartRevenueByMonth.ChartAreas[0].AxisX.IsMarginVisible = false;
 
                 // --- Bar chart: revenue by plan ---
                 chartRevenueByPlan.Series[0].Points.Clear();
+                int planIndex = 0;
                 foreach (var p in report.ByPlan)
                 {
-                    var idx = chartRevenueByPlan.Series[0].Points.AddXY(p.PlanName, p.Revenue);
-                    chartRevenueByPlan.Series[0].Points[idx].ToolTip =
-                        $"{p.PlanName}: {p.Revenue.ToString("C2", PesoCulture)} ({p.Count} sales)";
+                    var idx = chartRevenueByPlan.Series[0].Points.AddXY(planIndex, p.Revenue);
+                    var point = chartRevenueByPlan.Series[0].Points[idx];
+                    point.AxisLabel = p.PlanName;
+                    point.ToolTip = $"{p.PlanName}: {p.Revenue.ToString("C2", PesoCulture)} ({p.Count} sales)";
+                    planIndex++;
                 }
+
+                chartRevenueByPlan.ChartAreas[0].AxisX.Interval = 1;
 
                 // --- Grid ---
                 if (dgvSalesReport.Columns.Count == 0)

@@ -198,6 +198,7 @@ namespace CRM.winforms.Controls
             //
             // tabRevenue
             //
+            this.tabRevenue.AutoScroll = true;
             this.tabRevenue.Controls.Add(this.dgvSalesReport);
             this.tabRevenue.Controls.Add(this.chartRevenueByPlan);
             this.tabRevenue.Controls.Add(this.chartRevenueByMonth);
@@ -239,14 +240,6 @@ namespace CRM.winforms.Controls
             this.kpiRevenueCancelled.Value = "0";
             this.kpiRevenueCancelled.Subtitle = "in the date range";
             this.kpiRevenueCancelled.ValueColor = System.Drawing.Color.FromArgb(185, 28, 28);
-            // Data grid layout - make the grid stretch and allow scrolling when contents overflow
-            this.dgvSalesReport.Location = new System.Drawing.Point(15, 330);
-            this.dgvSalesReport.Size = new System.Drawing.Size(820, 170);
-            this.dgvSalesReport.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.dgvSalesReport.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
-            this.dgvSalesReport.RowHeadersVisible = false;
             //
             // chartRevenueByMonth
             //
@@ -286,21 +279,25 @@ namespace CRM.winforms.Controls
             //
             // dgvSalesReport
             //
+            // Grid is intentionally taller than the visible tab so the tab's
+            // AutoScroll kicks in and users can scroll to see all rows.
+            // It also has its own internal scrollbar for rows beyond its height.
             this.dgvSalesReport.AllowUserToAddRows = false;
             this.dgvSalesReport.AllowUserToDeleteRows = false;
-            this.dgvSalesReport.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
+            this.dgvSalesReport.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.dgvSalesReport.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dgvSalesReport.Location = new System.Drawing.Point(15, 305);
             this.dgvSalesReport.Name = "dgvSalesReport";
             this.dgvSalesReport.ReadOnly = true;
             this.dgvSalesReport.RowHeadersWidth = 51;
-            this.dgvSalesReport.Size = new System.Drawing.Size(810, 195);
+            this.dgvSalesReport.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+            this.dgvSalesReport.Size = new System.Drawing.Size(810, 400);
             this.dgvSalesReport.TabIndex = 3;
             //
             // Other tabs (empty for now)
             //
+            this.tabMembership.AutoScroll = true;
             this.tabMembership.Location = new System.Drawing.Point(4, 24);
             this.tabMembership.Name = "tabMembership";
             this.tabMembership.Padding = new System.Windows.Forms.Padding(3);
@@ -309,6 +306,7 @@ namespace CRM.winforms.Controls
             this.tabMembership.Text = "Membership";
             this.tabMembership.UseVisualStyleBackColor = true;
 
+            this.tabAttendance.AutoScroll = true;
             this.tabAttendance.Location = new System.Drawing.Point(4, 24);
             this.tabAttendance.Name = "tabAttendance";
             this.tabAttendance.Padding = new System.Windows.Forms.Padding(3);
@@ -317,6 +315,7 @@ namespace CRM.winforms.Controls
             this.tabAttendance.Text = "Attendance";
             this.tabAttendance.UseVisualStyleBackColor = true;
 
+            this.tabLeadConversion.AutoScroll = true;
             this.tabLeadConversion.Location = new System.Drawing.Point(4, 24);
             this.tabLeadConversion.Name = "tabLeadConversion";
             this.tabLeadConversion.Padding = new System.Windows.Forms.Padding(3);
@@ -325,6 +324,7 @@ namespace CRM.winforms.Controls
             this.tabLeadConversion.Text = "Lead Conversion";
             this.tabLeadConversion.UseVisualStyleBackColor = true;
 
+            this.tabRetention.AutoScroll = true;
             this.tabRetention.Location = new System.Drawing.Point(4, 24);
             this.tabRetention.Name = "tabRetention";
             this.tabRetention.Padding = new System.Windows.Forms.Padding(3);
@@ -333,6 +333,7 @@ namespace CRM.winforms.Controls
             this.tabRetention.Text = "Retention";
             this.tabRetention.UseVisualStyleBackColor = true;
 
+            this.tabPromoUsage.AutoScroll = true;
             this.tabPromoUsage.Location = new System.Drawing.Point(4, 24);
             this.tabPromoUsage.Name = "tabPromoUsage";
             this.tabPromoUsage.Padding = new System.Windows.Forms.Padding(3);
@@ -345,8 +346,6 @@ namespace CRM.winforms.Controls
             //
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            // Allow the control to show scrollbars when its contents are taller than the viewport
-            this.AutoScroll = true;
             this.Controls.Add(this.tabs);
             this.Controls.Add(this.btnPrint);
             this.Controls.Add(this.btnExport);
